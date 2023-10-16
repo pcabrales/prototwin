@@ -1,0 +1,9 @@
+# TOPAS Version: 3.1.p3
+# Parameter File: Input.in
+# Results for scorer DoseOnCTGrid
+# Scored in component: Score
+# X in 150 bins of 0.1 cm
+# Y in 60 bins of 0.2 cm
+# Z in 70 bins of 0.2 cm
+# DoseToMedium ( Gy ) : Sum   
+# Binary file: DoseOnCTGrid.bin

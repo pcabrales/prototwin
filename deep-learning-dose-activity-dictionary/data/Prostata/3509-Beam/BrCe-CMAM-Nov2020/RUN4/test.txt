@@ -1,0 +1,815 @@
+
+# live  and real time (secs) 1.024914176000 1.171799898148 469 0 
+
+# chan 0  pulsos y freq 469 457.599 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 2.210398208000 2.345201969147 572 32028568 
+
+# chan 0  pulsos y freq 572 258.777 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 3.403677696000 3.554600000381 671 69074944 
+
+# chan 0  pulsos y freq 671 197.140 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 4.019200000000 4.735592842102 725 106364928 
+
+# chan 0  pulsos y freq 725 180.384 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 5.721030656000 5.846217870712 870 0 
+
+# chan 0  pulsos y freq 870 152.071 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 6.918504448000 7.042677879333 972 53182208 
+
+# chan 0  pulsos y freq 972 140.493 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 8.038400000000 8.191283941269 1081 90603264 
+
+# chan 0  pulsos y freq 1081 134.479 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 9.206497280000 9.322234869003 1180 0 
+
+# chan 0  pulsos y freq 1180 128.170 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 10.349445120000 10.465896844864 1272 36503040 
+
+# chan 0  pulsos y freq 1272 122.905 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 11.490295808000 11.602733850479 1371 72220160 
+
+# chan 0  pulsos y freq 1371 119.318 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 12.057600000000 12.721259832382 1422 107871744 
+
+# chan 0  pulsos y freq 1422 117.934 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 13.681819648000 13.812358856201 1563 0 
+
+# chan 0  pulsos y freq 1563 114.239 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 14.879293440000 14.994906902313 3459 50756864 
+
+# chan 0  pulsos y freq 3459 232.471 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 16.030629888000 16.145331859589 5367 88177920 
+
+# chan 0  pulsos y freq 5367 334.797 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 16.076800000000 17.281147003174 5370 124157184 
+
+# chan 0  pulsos y freq 5370 334.022 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 18.201182208000 18.333829879761 7446 0 
+
+# chan 0  pulsos y freq 7446 409.094 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 19.486736384000 19.604069948196 7551 66386944 
+
+# chan 0  pulsos y freq 7551 387.494 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 20.096000000000 20.744313001633 7605 106560512 
+
+# chan 0  pulsos y freq 7605 378.434 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 21.726494720000 21.851575851440 7744 0 
+
+# chan 0  pulsos y freq 7744 356.431 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 22.913482752000 23.036031961441 7842 50952960 
+
+# chan 0  pulsos y freq 7842 342.244 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 24.062722048000 24.177985906601 7956 88046336 
+
+# chan 0  pulsos y freq 7956 330.636 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 24.115200000000 25.308853864670 7961 123960064 
+
+# chan 0  pulsos y freq 7961 330.124 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 26.227702912000 26.360943794250 8138 0 
+
+# chan 0  pulsos y freq 8138 310.283 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 27.472691200000 27.588563919067 9960 66015716 
+
+# chan 0  pulsos y freq 9960 362.542 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 28.134400000000 28.740945816040 10021 104921600 
+
+# chan 0  pulsos y freq 10021 356.183 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 29.727129600000 29.845858812332 10143 0 
+
+# chan 0  pulsos y freq 10143 341.203 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 30.905729024000 31.017478942871 10257 49772800 
+
+# chan 0  pulsos y freq 10257 331.880 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 32.036093952000 32.156484842300 10365 86604032 
+
+# chan 0  pulsos y freq 10365 323.541 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 32.153600000000 33.274942874908 10378 121927936 
+
+# chan 0  pulsos y freq 10378 322.763 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 34.215034880000 34.344370841980 10563 0 
+
+# chan 0  pulsos y freq 10563 308.724 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 35.450257408000 35.575407981873 10673 64419840 
+
+# chan 0  pulsos y freq 10673 301.070 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 36.172800000000 36.718388795853 10737 103020544 
+
+# chan 0  pulsos y freq 10737 296.825 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 37.708890112000 37.832762956619 10868 0 
+
+# chan 0  pulsos y freq 10868 288.208 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 38.893780992000 39.007937908173 10963 48002816 
+
+# chan 0  pulsos y freq 10963 281.870 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 40.027715072000 40.146972894669 11065 85030656 
+
+# chan 0  pulsos y freq 11065 276.433 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 40.192000000000 41.262465000153 11085 120466096 
+
+# chan 0  pulsos y freq 11085 275.801 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 42.200989696000 42.332504987717 12981 0 
+
+# chan 0  pulsos y freq 12981 307.599 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 43.438309376000 43.551918983459 13089 62780928 
+
+# chan 0  pulsos y freq 13089 301.324 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 44.211200000000 44.711541891098 13147 101447168 
+
+# chan 0  pulsos y freq 13147 297.368 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 45.705330688000 45.829752922058 13290 0 
+
+# chan 0  pulsos y freq 13290 290.776 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 46.881832960000 46.994820833206 13378 46691584 
+
+# chan 0  pulsos y freq 13378 285.356 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 48.016392192000 48.135260820389 13474 83457280 
+
+# chan 0  pulsos y freq 13474 280.613 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 48.230400000000 49.255643844604 13501 118912256 
+
+# chan 0  pulsos y freq 13501 279.927 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 50.203721728000 50.333702802658 13681 0 
+
+# chan 0  pulsos y freq 13681 272.510 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 51.432652800000 51.549901962280 13770 61666304 
+
+# chan 0  pulsos y freq 13770 267.729 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 52.249600000000 52.701984882355 13832 100070400 
+
+# chan 0  pulsos y freq 13832 264.729 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 53.702475264000 53.819900989532 13979 0 
+
+# chan 0  pulsos y freq 13979 260.305 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 54.865690624000 54.981890916824 14084 45402352 
+
+# chan 0  pulsos y freq 14084 256.700 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 56.014929920000 56.134287834167 14188 81752832 
+
+# chan 0  pulsos y freq 14188 253.290 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 56.268800000000 57.259143829346 14202 117666560 
+
+# chan 0  pulsos y freq 14202 252.396 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 58.210648064000 58.336810827255 14370 0 
+
+# chan 0  pulsos y freq 14370 246.862 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 59.433287680000 59.546266794205 16143 60682752 
+
+# chan 0  pulsos y freq 16143 271.615 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 60.288000000000 60.703953981400 16214 98890240 
+
+# chan 0  pulsos y freq 16214 268.942 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 61.700147840000 61.816082000732 16323 0 
+
+# chan 0  pulsos y freq 16323 264.554 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 62.860034048000 62.972668886185 16408 44129620 
+
+# chan 0  pulsos y freq 16408 261.024 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 63.994593280000 64.105310916901 16531 80376064 
+
+# chan 0  pulsos y freq 16531 258.319 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 64.307200000000 65.220752000809 16556 115831040 
+
+# chan 0  pulsos y freq 16556 257.452 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 66.175631360000 66.307078838348 18478 0 
+
+# chan 0  pulsos y freq 18478 279.227 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 67.402465280000 67.514375925064 23480 58388480 
+
+# chan 0  pulsos y freq 23480 348.355 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 68.326400000000 68.672115802765 23557 96727040 
+
+# chan 0  pulsos y freq 23557 344.772 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 69.682069504000 69.797824859619 23688 0 
+
+# chan 0  pulsos y freq 23688 339.944 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 70.835503104000 70.951730012894 23787 42364672 
+
+# chan 0  pulsos y freq 23787 335.806 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 71.974256640000 72.089465856552 23874 78409472 
+
+# chan 0  pulsos y freq 23874 331.702 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 72.345600000000 73.224527835846 25825 113995520 
+
+# chan 0  pulsos y freq 25825 356.967 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 74.184654848000 74.312264919281 27786 0 
+
+# chan 0  pulsos y freq 27786 374.552 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 75.401003008000 75.512849807739 27913 57470464 
+
+# chan 0  pulsos y freq 27913 370.194 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 76.364800000000 76.650030851364 28001 95481344 
+
+# chan 0  pulsos y freq 28001 366.674 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 77.653344256000 77.769460916519 28108 0 
+
+# chan 0  pulsos y freq 28108 361.968 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 78.802583552000 78.922407865524 28212 40267008 
+
+# chan 0  pulsos y freq 28212 358.009 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 79.951822848000 80.064976930618 28313 76180736 
+
+# chan 0  pulsos y freq 28313 354.126 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 80.384000000000 81.183477878571 30141 112094464 
+
+# chan 0  pulsos y freq 30141 374.963 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 82.168512512000 82.300476789474 30269 0 
+
+# chan 0  pulsos y freq 30269 368.377 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 83.382763520000 83.492654800415 30376 55766016 
+
+# chan 0  pulsos y freq 30376 364.296 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 84.403200000000 84.644113779068 30456 93711360 
+
+# chan 0  pulsos y freq 30456 360.839 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 85.662367744000 85.776470899582 30572 0 
+
+# chan 0  pulsos y freq 30572 356.890 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 86.807412736000 86.919591903687 30675 39348992 
+
+# chan 0  pulsos y freq 30675 353.368 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 87.937777664000 88.048975944519 34423 75131648 
+
+# chan 0  pulsos y freq 34423 391.447 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 88.422400000000 89.184268951416 34467 110455552 
+
+# chan 0  pulsos y freq 34467 389.799 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 90.158661632000 90.285391807556 34624 0 
+
+# chan 0  pulsos y freq 34624 384.034 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 91.381301248000 91.493541955948 34740 54258176 
+
+# chan 0  pulsos y freq 34740 380.165 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 92.441600000000 92.648763895035 36617 92465664 
+
+# chan 0  pulsos y freq 36617 396.110 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 93.673488384000 93.786837816238 36713 0 
+
+# chan 0  pulsos y freq 36713 391.925 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 94.812241920000 94.928064823151 38688 38496512 
+
+# chan 0  pulsos y freq 38688 408.049 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 95.959384064000 96.074596881866 38789 74082560 
+
+# chan 0  pulsos y freq 38789 404.223 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 96.460800000000 97.196736812592 38833 109930752 
+
+# chan 0  pulsos y freq 38833 402.578 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 98.155102208000 98.277276992798 40560 0 
+
+# chan 0  pulsos y freq 40560 413.224 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 99.354673152000 99.468796968460 40657 52946944 
+
+# chan 0  pulsos y freq 40657 409.211 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 100.480000000000 100.615755796432 40750 90433536 
+
+# chan 0  pulsos y freq 40750 405.553 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 101.634277376000 101.746162891388 42428 0 
+
+# chan 0  pulsos y freq 42428 417.458 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 102.766739456000 102.882536888123 42521 36071168 
+
+# chan 0  pulsos y freq 42521 413.762 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 103.903395840000 104.019733905792 42605 71460608 
+
+# chan 0  pulsos y freq 42605 410.044 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 104.499200000000 105.140539884567 42655 106981120 
+
+# chan 0  pulsos y freq 42655 408.185 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 106.115891200000 106.236391782761 42803 0 
+
+# chan 0  pulsos y freq 42803 403.361 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 107.298684928000 107.416632890701 42903 50521600 
+
+# chan 0  pulsos y freq 42903 399.846 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 108.443729920000 108.558528900146 43006 87483904 
+
+# chan 0  pulsos y freq 43006 396.574 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 108.518400000000 109.687821865082 43011 123266560 
+
+# chan 0  pulsos y freq 43011 396.348 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 110.605893632000 110.733972787857 45037 0 
+
+# chan 0  pulsos y freq 45037 407.184 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 111.851601920000 111.973709821701 45140 65234176 
+
+# chan 0  pulsos y freq 45140 403.570 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 112.537600000000 113.114017963409 47005 104162560 
+
+# chan 0  pulsos y freq 47005 417.683 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 114.093457408000 114.216863870621 49157 0 
+
+# chan 0  pulsos y freq 49157 430.849 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 115.286511744000 115.405072927475 49260 48620544 
+
+# chan 0  pulsos y freq 49260 427.283 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 116.433879040000 116.547877788544 49341 85903492 
+
+# chan 0  pulsos y freq 49341 423.768 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 116.556800000000 117.670606851578 49356 121758720 
+
+# chan 0  pulsos y freq 49356 423.450 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 118.602334208000 118.741721868515 49547 0 
+
+# chan 0  pulsos y freq 49547 417.757 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 119.847385344000 119.960875988007 49666 63922944 
+
+# chan 0  pulsos y freq 49666 414.410 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 120.576000000000 121.091974973679 49719 102830792 
+
+# chan 0  pulsos y freq 49719 412.346 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 122.068926464000 122.186649799347 49822 0 
+
+# chan 0  pulsos y freq 49822 408.146 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 123.249623040000 123.364969968796 49945 46653952 
+
+# chan 0  pulsos y freq 49945 405.235 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 124.406049792000 124.521539926529 50058 83550720 
+
+# chan 0  pulsos y freq 50058 402.376 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 124.595200000000 125.644809961319 50072 119689056 
+
+# chan 0  pulsos y freq 50072 401.877 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 126.590386176000 126.727301836014 50268 0 
+
+# chan 0  pulsos y freq 50268 397.092 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 127.829803008000 127.942648887634 50358 62349568 
+
+# chan 0  pulsos y freq 50358 393.946 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 128.614400000000 129.083190917969 50424 101081344 
+
+# chan 0  pulsos y freq 50424 392.056 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 130.085121408000 130.201461791992 52567 0 
+
+# chan 0  pulsos y freq 52567 404.097 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 131.267035136000 131.385497808456 52664 45960044 
+
+# chan 0  pulsos y freq 52664 401.197 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 132.412080128000 132.529868841171 52761 82894848 
+
+# chan 0  pulsos y freq 52761 398.461 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 132.633600000000 133.662546873093 52780 118677504 
+
+# chan 0  pulsos y freq 52780 397.938 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 134.614089728000 134.743043899536 52933 0 
+
+# chan 0  pulsos y freq 52933 393.220 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 135.843020800000 135.960119962692 53030 61890304 
+
+# chan 0  pulsos y freq 53030 390.377 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 136.652800000000 137.101135015488 53105 100294400 
+
+# chan 0  pulsos y freq 53105 388.613 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 138.107944960000 138.233513832092 53230 0 
+
+# chan 0  pulsos y freq 53230 385.423 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 139.299127296000 139.412804841995 55569 45473280 
+
+# chan 0  pulsos y freq 55569 398.919 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 140.450639744000 140.565091848373 55673 82697728 
+
+# chan 0  pulsos y freq 55673 396.388 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 140.672000000000 141.697431802750 55698 118682492 
+
+# chan 0  pulsos y freq 55698 395.942 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 142.629404672000 142.752744913101 55886 0 
+
+# chan 0  pulsos y freq 55886 391.827 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 143.847849984000 143.963470935822 55989 61168896 
+
+# chan 0  pulsos y freq 55989 389.224 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 144.691200000000 145.103781938553 56066 99245312 
+
+# chan 0  pulsos y freq 56066 387.487 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 146.095996928000 146.216197967529 56184 0 
+
+# chan 0  pulsos y freq 56184 384.569 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 147.259916288000 147.378412961960 56307 43899904 
+
+# chan 0  pulsos y freq 56307 382.365 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 148.409155584000 148.527198791504 56407 80272384 
+
+# chan 0  pulsos y freq 56407 380.078 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 148.710400000000 149.652057886124 58010 116186112 
+
+# chan 0  pulsos y freq 58010 390.087 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 150.606970880000 150.735806941986 58182 0 
+
+# chan 0  pulsos y freq 58182 386.317 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 151.825416192000 151.941438913345 58299 59267840 
+
+# chan 0  pulsos y freq 58299 383.987 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 152.729600000000 153.092247009277 58375 97344256 
+
+# chan 0  pulsos y freq 58375 382.211 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 154.090340352000 154.207668781281 60213 0 
+
+# chan 0  pulsos y freq 60213 390.764 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 155.268939776000 155.390167951584 60313 42523136 
+
+# chan 0  pulsos y freq 60313 388.442 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 156.418179072000 156.531159877777 60423 79354368 
+
+# chan 0  pulsos y freq 60423 386.291 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 156.748800000000 157.656916856766 60448 115268096 
+
+# chan 0  pulsos y freq 60448 385.636 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 158.601314304000 158.735052824020 60619 0 
+
+# chan 0  pulsos y freq 60619 382.210 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 159.826051072000 159.942228794098 60742 57891072 
+
+# chan 0  pulsos y freq 60742 380.051 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 160.768000000000 161.082500934601 60827 96164096 
+
+# chan 0  pulsos y freq 60827 378.353 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 162.093072384000 162.218875885010 60935 0 
+
+# chan 0  pulsos y freq 60935 375.926 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 163.259088896000 163.377793788910 61035 41408512 
+
+# chan 0  pulsos y freq 61035 373.854 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 164.429299712000 164.543175935745 61120 77846528 
+
+# chan 0  pulsos y freq 61120 371.710 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 164.787200000000 165.662661790848 61160 114415616 
+
+# chan 0  pulsos y freq 61160 371.145 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 166.627115008000 166.755075931549 61333 0 
+
+# chan 0  pulsos y freq 61333 368.085 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 167.844791168000 167.959926843643 61428 57497344 
+
+# chan 0  pulsos y freq 61428 365.981 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 168.806400000000 169.100000858307 61507 95549724 
+
+# chan 0  pulsos y freq 61507 364.364 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 170.112581632000 170.229143857956 61621 0 
+
+# chan 0  pulsos y freq 61621 362.237 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 171.266015232000 171.379575967789 63613 40818176 
+
+# chan 0  pulsos y freq 63613 371.428 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 172.413157376000 172.526987791061 65348 76862976 
+
+# chan 0  pulsos y freq 65348 379.020 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 172.825600000000 173.658982992172 65372 112711168 
+
+# chan 0  pulsos y freq 65372 378.254 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 174.627749888000 174.752744913101 65555 0 
+
+# chan 0  pulsos y freq 65555 375.399 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 175.839903744000 175.951436996460 65684 56317184 
+
+# chan 0  pulsos y freq 65684 373.544 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 176.844800000000 177.085529804230 65786 94196992 
+
+# chan 0  pulsos y freq 65786 371.998 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 178.104827904000 178.222726821899 65892 0 
+
+# chan 0  pulsos y freq 65892 369.962 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 179.258261504000 179.375682830811 65997 39375872 
+
+# chan 0  pulsos y freq 65997 368.167 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 180.401209344000 180.519461870193 67919 75420672 
+
+# chan 0  pulsos y freq 67919 376.489 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 180.864000000000 181.650434017181 67957 111137792 
+
+# chan 0  pulsos y freq 67957 375.735 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 182.624190464000 182.750448942184 69914 0 
+
+# chan 0  pulsos y freq 69914 382.830 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 183.842635776000 183.953505992889 70014 55005952 
+
+# chan 0  pulsos y freq 70014 380.837 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 184.883200000000 185.089462995529 70092 93082368 
+
+# chan 0  pulsos y freq 70092 379.115 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 186.113851392000 186.237855911255 70203 0 
+
+# chan 0  pulsos y freq 70203 377.205 
+#     np  wd ic is   live t (secs)    E 

@@ -1,0 +1,72 @@
+
+# live  and real time (secs) 0.092274688000 0.194303989410 549 0 
+
+# chan 0  pulsos y freq 549 5949.627 
+
+# live  and real time (secs) 0.092274688000 0.194303989410 0 0 
+
+# chan 1  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.092274688000 0.194303989410 0 0 
+
+# chan 2  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.092274688000 0.194303989410 0 0 
+
+# chan 3  pulsos y freq 0 0.000 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 0.339738624000 0.466248035431 2026 1441792 
+
+# chan 0  pulsos y freq 2026 5963.408 
+
+# live  and real time (secs) 0.339738624000 0.466248035431 0 1441792 
+
+# chan 1  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.339738624000 0.466248035431 0 1441792 
+
+# chan 2  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.339738624000 0.466248035431 0 1441792 
+
+# chan 3  pulsos y freq 0 0.000 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 0.666894336000 0.800827980042 3969 5308416 
+
+# chan 0  pulsos y freq 3969 5951.468 
+
+# live  and real time (secs) 0.666894336000 0.800827980042 0 5308416 
+
+# chan 1  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.666894336000 0.800827980042 0 5308416 
+
+# chan 2  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.666894336000 0.800827980042 0 5308416 
+
+# chan 3  pulsos y freq 0 0.000 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 0.803840000000 1.141384840012 4786 10420224 
+
+# chan 0  pulsos y freq 4786 5953.921 
+
+# live  and real time (secs) 0.803840000000 1.141384840012 0 10420224 
+
+# chan 1  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.803840000000 1.141384840012 0 10420224 
+
+# chan 2  pulsos y freq 0 0.000 
+
+# live  and real time (secs) 0.803840000000 1.141384840012 0 10420224 
+
+# chan 3  pulsos y freq 0 0.000 
+#     np  wd ic is   live t (secs)    E 
+
+# live  and real time (secs) 1.315889152000 1.433658838272 7685 0 
+
+# chan 0  pulsos y freq 7685 5840.158 
