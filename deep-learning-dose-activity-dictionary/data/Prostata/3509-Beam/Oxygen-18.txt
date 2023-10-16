@@ -1,9 +1,0 @@
-#  Definicion de Isotopos 16-O y 18-O
-i:Is/IsO18/Z = 8
-i:Is/IsO18/N = 18
-d:Is/IsO18/A = 17.99916 g/mole
-
-#Definicio de un Nuevo Elemento 18-O
-s:El/O18/Symbol = "O18"
-sv:El/O18/IsotopeNames = 1 "IsO18"
-uv:El/O18/IsotopeAbundances = 1 100.
