@@ -16,6 +16,10 @@ if not os.path.exists(output_dir):
 
 # Adding the activities to generate input images and moving doses to generate output images
 for folder_name in os.listdir(raw_directory):
+    if folder_name[-4:] != "Beam":
+        print(folder_name)
+        continue
+
     beam_id = folder_name[0:4]
     folder_name = raw_directory + '/' + folder_name
     total_activation = 0
