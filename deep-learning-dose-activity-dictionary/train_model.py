@@ -24,9 +24,9 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
             batch_target = batch_target.to(device)
             optim.zero_grad()  # resetting gradients
             batch_output = model(batch_input)  # generating images
-            loss = torch.mean(range_loss(batch_output, batch_target, 0.9)**2) \
-                + torch.mean(range_loss(batch_output, batch_target, 0.5)**2) \
-                + torch.mean(range_loss(batch_output, batch_target, 0.1)**2) \
+            loss = torch.mean(range_loss(batch_output, batch_target, 0.9, device="cuda")**2) \
+                + torch.mean(range_loss(batch_output, batch_target, 0.5, device="cuda")**2) \
+                + torch.mean(range_loss(batch_output, batch_target, 0.1, device="cuda")**2) \
                 + 1000 * l2_loss(batch_output, batch_target)
             loss.backward()  # backprop
             optim.step()
@@ -38,9 +38,9 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
                 batch_input = batch_input.to(device)
                 batch_target = batch_target.to(device)
                 batch_output = model(batch_input)
-                loss = torch.mean(range_loss(batch_output, batch_target, 0.9)**2) \
-                    + torch.mean(range_loss(batch_output, batch_target, 0.5)**2) \
-                    + torch.mean(range_loss(batch_output, batch_target, 0.1)**2) \
+                loss = torch.mean(range_loss(batch_output, batch_target, 0.9, device="cuda")**2) \
+                    + torch.mean(range_loss(batch_output, batch_target, 0.5, device="cuda")**2) \
+                    + torch.mean(range_loss(batch_output, batch_target, 0.1, device="cuda")**2) \
                     + 1000 * l2_loss(batch_output, batch_target)
                 val_loss += loss.item()
 

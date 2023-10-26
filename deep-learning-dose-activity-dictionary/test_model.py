@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from tqdm import tqdm
-from utils import RE_loss, range_loss
+from utils import RE_loss, range_loss, post_BP_loss
 
 def test(trained_model, test_loader, device, results_dir='.'):
     # Test loop (after the training is complete)
@@ -22,7 +22,8 @@ def test(trained_model, test_loader, device, results_dir='.'):
             R90_list.append(range_loss(batch_output, batch_target, 0.9))
             R50_list.append(range_loss(batch_output, batch_target, 0.5))
             R10_list.append(range_loss(batch_output, batch_target, 0.1))
-
+            post_BP_loss(batch_output, batch_target) ###
+            break ###
     RE_loss_list = torch.cat(RE_loss_list)
     l2_loss_list = torch.tensor(l2_loss_list)
     R90_list = torch.cat(R90_list)
