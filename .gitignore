@@ -3,3 +3,4 @@ models/
 *Zone.Identifier
 images/
 old-files/
+*.pyc

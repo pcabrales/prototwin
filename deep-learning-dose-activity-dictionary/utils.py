@@ -144,8 +144,15 @@ def mse_loss(output, target, mean_output=0, std_output=1):  # Relative error los
     loss = torch.sum((output - target)**2)
     return loss
 
+def manual_permute(tensor, dims):
+    for i in range(len(dims)):
+        if i != dims[i]:
+            tensor = tensor.transpose(i, dims[i])
+            dims = [dims.index(j) if j == i else j for j in dims]
+    return tensor
+
 # Range deviation
-def range_loss(output, target, range=0.9):
+def range_loss(output, target, range_val=0.9):
     ''' This is the difference between output and target in the depth at which
     the dose reaches a certain percentage of the Bragg Peak dose after the Bragg Peak.
     This is done for every curve in the transversal plane where the dose is not zero.
@@ -155,34 +162,41 @@ def range_loss(output, target, range=0.9):
     indices_keep = max_along_depth > 0.1 * max_global.unsqueeze(-1).unsqueeze(-1)  # Unsqueeze to match dimensions of the tensors. These are the indices of the transversal Bragg Peaks higher than 1% of the highest peak BP
     max_along_depth = max_along_depth[indices_keep] # Only keep the max, or bragg peaks, of transversal points with non-null dose
     idx_max_along_depth = idx_max_along_depth[indices_keep]
-    target_permuted = torch.permute(target, (1, 0, 2, 3))
-    output_permuted = torch.permute(output, (1, 0, 2, 3))
+    # target_permuted = torch.permute(target, (1, 0, 2, 3))
+    # output_permuted = torch.permute(output, (1, 0, 2, 3))
+    target_permuted = manual_permute(target, (1, 0, 2, 3))
+    output_permuted = manual_permute(output, (1, 0, 2, 3))
     new_shape = [150] + [torch.sum(indices_keep).item()]
     indices_keep = indices_keep.expand(150, -1, -1, -1)
     ddp_data = target_permuted[indices_keep].reshape(new_shape)
     ddp_output_data = output_permuted[indices_keep].reshape(new_shape)
 
-    depth = np.arange(150)  # in mm´
-    ddp = interp1d(depth, ddp_data, axis=0, kind='cubic')
-    ddp_output = interp1d(depth, ddp_output_data, axis=0, kind='cubic')
-    depth_extended = np.linspace(min(depth), max(depth), 10000)
-    dose_at_range = range * max_along_depth.numpy()
-
-    ddp_depth_extended = ddp(depth_extended)
-    ddp_output_depth_extended = ddp_output(depth_extended)
+    depth = torch.arange(150, dtype=torch.float32)  # in mm
+    depth_extended = torch.linspace(min(depth), max(depth), 10000)
+    dose_at_range = range_val * max_along_depth
+    
+    # ddp = interp1d(depth, ddp_data, axis=0, kind='cubic')
+    # ddp_output = interp1d(depth, ddp_output_data, axis=0, kind='cubic')
+    # ddp_depth_extended = ddp(depth_extended)
+    # ddp_output_depth_extended = ddp_output(depth_extended)
+    
+    ddp_depth_extended  = torch_cubic_interp1d_2d(depth, ddp_data, depth_extended)
+    ddp_output_depth_extended  = torch_cubic_interp1d_2d(depth, ddp_output_data, depth_extended)
+    
     # n_plot = 115
     # plt.plot(depth_extended, ddp_depth_extended[:, n_plot])
     # plt.plot(depth_extended, ddp_output_depth_extended[:, n_plot])
 
-    mask = depth_extended[:, np.newaxis] > idx_max_along_depth.numpy()  # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)
+    # mask = depth_extended[:, np.newaxis] > idx_max_along_depth.numpy()  # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)
+    mask = depth_extended[:, None] > idx_max_along_depth # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)
     ddp_depth_extended[mask] = 0
     ddp_output_depth_extended[mask] = 0
-    depth_at_range = depth_extended[np.abs(ddp_depth_extended - dose_at_range).argmin(axis=0)]
-    depth_at_range_output = depth_extended[np.abs(ddp_output_depth_extended - dose_at_range).argmin(axis=0)]
+    depth_at_range = depth_extended[torch.argmin(torch.abs(ddp_depth_extended - dose_at_range), dim=0)]
+    depth_at_range_output = depth_extended[torch.argmin(torch.abs(ddp_output_depth_extended  - dose_at_range), dim=0)]
 
     # plt.plot(depth_at_range[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
     # plt.plot(depth_at_range_output[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
-    return torch.tensor(depth_at_range_output - depth_at_range)
+    return depth_at_range_output - depth_at_range
 
 
 # Plotting results
@@ -191,12 +205,25 @@ def plot_slices(trained_model, loader, device, mean_input=0, std_input=1,
                 mean_output=0, std_output=1, y_slice = 30,
                 save_plot_dir = "images/sample.png"):
     # Loading a few examples
-    input, target = next(iter(loader))
+    iter_loader = iter(loader)
+    input, target = next(iter_loader)
     trained_model.eval()  # Putting the model in validation mode
     output = trained_model(input.to(device))
 
     output = output.detach().cpu()  # Detaching from the computational graph
     torch.cuda.empty_cache()  # Freeing up RAM 
+    
+    while input.shape[0] < 3:
+        # If the batch size is 1 or 2, load more examples
+        input_i, target_i = next(iter_loader)
+        output_i = trained_model(input_i.to(device))
+
+        output_i = output_i.detach().cpu()  # Detaching from the computational graph
+        torch.cuda.empty_cache()  # Freeing up RAM 
+        
+        input = torch.cat((input, input_i))
+        output = torch.cat((output, output_i))
+        target = torch.cat((target, target_i))
 
     sns.set()
     n_plots = 3
@@ -205,7 +232,6 @@ def plot_slices(trained_model, loader, device, mean_input=0, std_input=1,
     input_scaled = mean_input + input * std_input
     output_scaled = mean_output + output * std_output  # undoing normalization
     target_scaled = mean_output + target * std_output
-
     font_size = 15
 
     # Add titles to the columns
@@ -266,12 +292,25 @@ def plot_slices(trained_model, loader, device, mean_input=0, std_input=1,
 def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
              y_slice = 30, save_plot_dir = "images/ddp.png"):
     # Loading a few examples
-    input, target = next(iter(loader))
+    iter_loader = iter(loader)
+    input, target = next(iter_loader)
     trained_model.eval()  # Putting the model in validation mode
     output = trained_model(input.to(device))
 
     output = output.detach().cpu()  # Detaching from the computational graph
     torch.cuda.empty_cache()  # Freeing up RAM 
+    
+    while input.shape[0] < 3:
+        # If the batch size is 1 or 2, load more examples
+        input_i, target_i = next(iter_loader)
+        output_i = trained_model(input_i.to(device))
+
+        output_i = output_i.detach().cpu()  # Detaching from the computational graph
+        torch.cuda.empty_cache()  # Freeing up RAM 
+        
+        input = torch.cat((input, input_i))
+        output = torch.cat((output, output_i))
+        target = torch.cat((target, target_i))
 
     sns.set()
     n_plots = 3
@@ -299,3 +338,51 @@ def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
     fig.savefig(save_plot_dir, dpi=300, bbox_inches='tight')
 
 
+# Correcting the indexing error and implementing the cubic interpolation for 2D y array
+def torch_cubic_interp1d_2d(x, y, x_new):
+    n = len(x)
+    xdiff = x[1:] - x[:-1]
+    
+    # Make sure y has two dimensions
+    if len(y.shape) == 1:
+        y = y[:, None]
+    
+    ydiff = y[1:, :] - y[:-1, :]
+    
+    # Computing the slopes
+    slopes = ydiff / xdiff[:, None]
+    
+    # Computing the second derivatives
+    alpha = xdiff[1:] / (xdiff[:-1] + xdiff[1:])
+    beta = 1 - alpha
+    dydx = 0.5 * (slopes[:-1, :] + slopes[1:, :])
+    d2ydx2 = (slopes[1:, :] - slopes[:-1, :]) / (xdiff[:-1, None] + xdiff[1:, None])
+    
+    # Boundary conditions for natural cubic spline
+    d2ydx2_first = 2 * (alpha[0, None] * slopes[0, :] - dydx[0, :]) / ((1 - alpha[0]) * xdiff[0])
+    d2ydx2_last = 2 * (dydx[-1, :] - beta[-1, None] * slopes[-1, :]) / (xdiff[-1] * (1 - beta[-1]))
+    
+    d2ydx2 = torch.cat([d2ydx2_first[None, :], d2ydx2, d2ydx2_last[None, :]], dim=0)
+    
+    # Finding the segment each x_new is in
+    indices = torch.searchsorted(x[1:], x_new)
+    indices = torch.clamp(indices, 0, n-2)
+    
+    x0 = x[indices]
+    x1 = x[indices + 1]
+    a0 = y[indices, :]
+    a1 = y[indices + 1, :]
+    s0 = slopes[indices, :]
+    s1 = slopes[torch.clamp(indices + 1, 0, n-2), :]
+    d2a0 = d2ydx2[indices, :]
+    d2a1 = d2ydx2[torch.clamp(indices + 1, 0, n-2), :]
+    
+    # Computing the cubic polynomials for each segment
+    t = (x_new - x0)[:, None] / (x1 - x0)[:, None]
+    h00 = (1 + 2*t) * (1 - t)**2
+    h10 = t * (1 - t)**2
+    h01 = t**2 * (3 - 2*t)
+    h11 = t**2 * (t - 1)
+    
+    interpolated = h00 * a0 + h10 * (x1 - x0)[:, None] * s0 + h01 * a1 + h11 * (x1 - x0)[:, None] * s1
+    return interpolated

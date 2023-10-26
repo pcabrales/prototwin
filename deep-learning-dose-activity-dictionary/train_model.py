@@ -3,6 +3,8 @@ import torch.nn as nn
 import time
 from tqdm import tqdm
 from livelossplot import PlotLosses
+from utils import RE_loss, range_loss
+from utils import range_loss
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir = '.'):
@@ -10,8 +12,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
     # Initializing the optimizer for the model parameters
     optim = torch.optim.Adam(model.parameters(), lr=0.001)
     liveloss = PlotLosses()  # Object to track validation and training losses across epochs
-    # alpha = 0.5  # parameter to weigh the L1 and dice losses
-    l1_loss = nn.L1Loss()
+    l2_loss = nn.MSELoss()
     for epoch in range(epochs):
         logs = {}
         train_loss = 0.0
@@ -23,8 +24,10 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
             batch_target = batch_target.to(device)
             optim.zero_grad()  # resetting gradients
             batch_output = model(batch_input)  # generating images
-            # loss = alpha * dice_loss(batch_output, batch_target) + (1 - alpha) * RE_loss(batch_output, batch_target)
-            loss = l1_loss(batch_output, batch_target)
+            loss = torch.mean(range_loss(batch_output, batch_target, 0.9)**2) \
+                + torch.mean(range_loss(batch_output, batch_target, 0.5)**2) \
+                + torch.mean(range_loss(batch_output, batch_target, 0.1)**2) \
+                + 1000 * l2_loss(batch_output, batch_target)
             loss.backward()  # backprop
             optim.step()
             train_loss += loss.item()
@@ -35,8 +38,10 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
                 batch_input = batch_input.to(device)
                 batch_target = batch_target.to(device)
                 batch_output = model(batch_input)
-                # loss = alpha * dice_loss(batch_output, batch_target) + (1 - alpha) * RE_loss(batch_output, batch_target)
-                loss = l1_loss(batch_output, batch_target)
+                loss = torch.mean(range_loss(batch_output, batch_target, 0.9)**2) \
+                    + torch.mean(range_loss(batch_output, batch_target, 0.5)**2) \
+                    + torch.mean(range_loss(batch_output, batch_target, 0.1)**2) \
+                    + 1000 * l2_loss(batch_output, batch_target)
                 val_loss += loss.item()
 
         # Calculate average losses (to make it independent of batch size)
