@@ -8,6 +8,8 @@ from scipy.interpolate import interp1d
 import seaborn as sns 
 import matplotlib.pyplot as plt
 
+from scipy.ndimage import zoom ###
+
 def set_seed(seed):
     """
     Set all the random seeds to a fixed value to take out any randomness
@@ -22,6 +24,48 @@ def set_seed(seed):
 
 
 # Creating a dataset for the dose/activity input/output pairs
+class DoseActivityDatasetReshaped(Dataset):
+    """
+    Create the dataset where the activity is the input and the dose is the output.
+    The relevant transforms are applied.
+    """
+    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, joint_transform=None, size_reshape=128):
+        self.input_dir = input_dir
+        self.output_dir = output_dir
+        self.input_transform = input_transform
+        self.output_transform = output_transform
+        self.joint_transform = joint_transform
+        self.file_names = os.listdir(input_dir)[:num_samples]
+        self.size_reshape = size_reshape
+
+    def __len__(self):
+        return len(self.file_names)
+
+    def __getitem__(self, idx):
+        # Load activity and dose images (numpy arrays)
+        input_volume = np.load(os.path.join(self.input_dir, self.file_names[idx]))
+        output_volume = np.load(os.path.join(self.output_dir, self.file_names[idx]))
+        
+        # Perform 3D interpolation
+        input_volume = zoom(input_volume, (self.size_reshape / input_volume.shape[0], self.size_reshape / input_volume.shape[1], self.size_reshape / input_volume.shape[2]))
+        output_volume = zoom(output_volume, (self.size_reshape / output_volume.shape[0], self.size_reshape / output_volume.shape[1], self.size_reshape / output_volume.shape[2]))
+                
+        # Convert numpy arrays to PyTorch tensors
+        input_volume = torch.tensor(input_volume, dtype=torch.float32)
+        output_volume = torch.tensor(output_volume, dtype=torch.float32)
+
+        # Apply transforms
+        if self.input_transform:
+            input_volume = self.input_transform(input_volume)
+        if self.output_transform:
+            output_volume = self.output_transform(output_volume)
+        if self.joint_transform:
+            input_volume = self.joint_transform(input_volume)
+            output_volume = self.joint_transform(output_volume)
+        return input_volume, output_volume
+
+
+# Creating a 128x128 dataset for the dose/activity input/output pairs
 class DoseActivityDataset(Dataset):
     """
     Create the dataset where the activity is the input and the dose is the output.
@@ -118,16 +162,6 @@ class GaussianBlurFloats:
 
 
 # CUSTOM LOSSES
-# Dice loss
-def dice_loss(output, target, smooth=1e-10):
-    # Compute the intersection and the sum of the two sets along specified dimensions
-    intersection = (target * output).sum(dim=(1, 2, 3))
-    total_sum = target.sum(dim=(1, 2, 3)) + output.sum(dim=(1, 2, 3))
-    # Compute Dice coefficient
-    dice_coeff = (2. * intersection + smooth) / (total_sum + smooth)
-    # Compute and return Dice loss averaged over the batch
-    return 1. - dice_coeff.mean()
-
 # Relative error
 def RE_loss(output, target, mean_output=0, std_output=1):  # Relative error loss
     output = mean_output + output * std_output  # undoing normalization
@@ -151,7 +185,10 @@ def manual_permute(tensor, dims):
             dims = [dims.index(j) if j == i else j for j in dims]
     return tensor
 
-def post_BP_loss(output, target):
+def post_BP_loss(output, target, device="cpu", mean_output=0, std_output=1):
+    longitudinal_size = output.shape[1]
+    output = mean_output + output * std_output  # undoing normalization
+    target = mean_output + target * std_output
     max_global = torch.amax(target, dim=(1, 2, 3))  # Overall max for each image
     max_along_depth, idx_max_along_depth = torch.max(target, dim=1)  # Max at each transversal point
     indices_keep = max_along_depth > 0.01 * max_global.unsqueeze(-1).unsqueeze(-1)  # Unsqueeze to match dimensions of the tensors. These are the indices of the transversal Bragg Peaks higher than 1% of the highest peak BP
@@ -161,31 +198,36 @@ def post_BP_loss(output, target):
     # output_permuted = torch.permute(output, (1, 0, 2, 3))
     target_permuted = manual_permute(target, (1, 0, 2, 3))
     output_permuted = manual_permute(output, (1, 0, 2, 3))
-    new_shape = [150] + [torch.sum(indices_keep).item()]
-    indices_keep = indices_keep.expand(150, -1, -1, -1)
+    new_shape = [longitudinal_size] + [torch.sum(indices_keep).item()]
+    indices_keep = indices_keep.expand(longitudinal_size, -1, -1, -1)
     ddp_data = target_permuted[indices_keep].reshape(new_shape)
     ddp_output_data = output_permuted[indices_keep].reshape(new_shape)
     
-    depth = torch.arange(150, dtype=torch.float32).to(device)  # in mm
+    depth = torch.arange(longitudinal_size, dtype=torch.float32).to(device)  # in mm
     mask_pre_BP = depth[:, None] > idx_max_along_depth    # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)
-    mask_post_BP = ddp_data[:, None] < 0.1 * max_along_depth  # mask to only consider the range between the BP and the drop until 0.1 * BP
-    mask = mask_pre_BP & mask_post_BP
-    plt.figure()
-    plt.plot(depth, ddp_data[11], marker=".", markersize=10)
-    plt.plot(depth, ddp_output_data[11], marker=".", markersize=10)
+    mask_post_BP = ddp_data < 0.1 * max_along_depth  # mask to only consider the range between the BP and the drop until 0.1 * BP
+    mask = mask_pre_BP | mask_post_BP
     ddp_data[mask] = 0
     ddp_output_data[mask] = 0
-    plt.plot(depth, ddp_data[11], marker=".", markersize=10)
-    plt.plot(depth, ddp_output_data[11], marker=".", markersize=10)
-    return torch.mean((ddp_data - ddp_output_data) ** 2)
+    diff_target_output = ddp_data - ddp_output_data
+    diff_target_output = (diff_target_output - mean_output) / std_output
+    
+    # n_plot = 200
+    # plt.figure()
+    # plt.plot(depth, ddp_data[:, n_plot], marker=".", markersize=10)
+    # plt.plot(depth, ddp_output_data[:, n_plot], marker=".", markersize=10)
+    return torch.mean((diff_target_output) ** 2)
     
 
 # Range deviation
-def range_loss(output, target, range_val=0.9, device="cpu"):
+def range_loss(output, target, range_val=0.9, device="cpu", mean_output=0, std_output=1):
     ''' This is the difference between output and target in the depth at which
     the dose reaches a certain percentage of the Bragg Peak dose after the Bragg Peak.
     This is done for every curve in the transversal plane where the dose is not zero.
     '''
+    longitudinal_size = output.shape[1]
+    output = mean_output + output * std_output  # undoing normalization
+    target = mean_output + target * std_output
     max_global = torch.amax(target, dim=(1, 2, 3))  # Overall max for each image
     max_along_depth, idx_max_along_depth= torch.max(target, dim=1)  # Max at each transversal point
     indices_keep = max_along_depth > 0.1 * max_global.unsqueeze(-1).unsqueeze(-1)  # Unsqueeze to match dimensions of the tensors. These are the indices of the transversal Bragg Peaks higher than 1% of the highest peak BP
@@ -195,12 +237,12 @@ def range_loss(output, target, range_val=0.9, device="cpu"):
     # output_permuted = torch.permute(output, (1, 0, 2, 3))
     target_permuted = manual_permute(target, (1, 0, 2, 3))
     output_permuted = manual_permute(output, (1, 0, 2, 3))
-    new_shape = [150] + [torch.sum(indices_keep).item()]
-    indices_keep = indices_keep.expand(150, -1, -1, -1)
+    new_shape = [longitudinal_size] + [torch.sum(indices_keep).item()]
+    indices_keep = indices_keep.expand(longitudinal_size, -1, -1, -1)
     ddp_data = target_permuted[indices_keep].reshape(new_shape)
     ddp_output_data = output_permuted[indices_keep].reshape(new_shape)
 
-    depth = torch.arange(150, dtype=torch.float32).to(device)  # in mm
+    depth = torch.arange(longitudinal_size, dtype=torch.float32).to(device)  # in mm
     depth_extended = torch.linspace(min(depth), max(depth), 10000).to(device)
     dose_at_range = range_val * max_along_depth
     
