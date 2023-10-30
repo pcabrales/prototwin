@@ -3,13 +3,13 @@ import torch.nn as nn
 import time
 from tqdm import tqdm
 from livelossplot import PlotLosses
-from utils import RE_loss, post_BP_loss
+from utils import RE_loss
 from utils import range_loss
 import matplotlib.pyplot as plt
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir = '.',
-          save_plot_dir=save_plot_dir, mean_output=0, std_output=1):
+          save_plot_dir='.'):
     start_time = time.time()  # Timing the training time
     # Initializing the optimizer for the model parameters
     optim = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -28,8 +28,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
             batch_target = batch_target.to(device)
             optim.zero_grad()  # resetting gradients
             batch_output = model(batch_input)  # generating images
-            loss = post_BP_loss(batch_output, batch_target, device=device, mean_output=mean_output, std_output=std_output) \
-                + 10 * l2_loss(batch_output, batch_target)
+            loss = l2_loss(batch_output, batch_target)
             loss.backward()  # backprop
             optim.step()
             train_loss += loss.item()
@@ -43,8 +42,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
                 batch_input = batch_input.to(device)
                 batch_target = batch_target.to(device)
                 batch_output = model(batch_input)
-                loss = post_BP_loss(batch_output, batch_target, device=device, mean_output=mean_output, std_output=std_output) \
-                    + 10 * l2_loss(batch_output, batch_target)
+                loss = l2_loss(batch_output, batch_target)
                 val_loss += loss.item()
 
         # Calculate average losses (to make it independent of batch size)

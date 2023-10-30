@@ -1,5 +1,6 @@
 import random
 import torch
+import torch.nn.functional as F
 import numpy as np
 import os
 from torch.utils.data import Dataset
@@ -60,8 +61,7 @@ class DoseActivityDatasetReshaped(Dataset):
         if self.output_transform:
             output_volume = self.output_transform(output_volume)
         if self.joint_transform:
-            input_volume = self.joint_transform(input_volume)
-            output_volume = self.joint_transform(output_volume)
+            input_volume, output_volume = self.joint_transform(input_volume, output_volume)
         return input_volume, output_volume
 
 
@@ -97,8 +97,8 @@ class DoseActivityDataset(Dataset):
         if self.output_transform:
             output_volume = self.output_transform(output_volume)
         if self.joint_transform:
-            input_volume = self.joint_transform(input_volume)
-            output_volume = self.joint_transform(output_volume)
+            input_volume, output_volume = self.joint_transform(input_volume, output_volume)
+            
         return input_volume, output_volume
 
 
@@ -135,6 +135,23 @@ def dataset_statistics(input_dir, output_dir, num_samples=5):
     
 
 # CUSTOM TRANSFORMS
+
+class JointCompose:
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, input_volume, output_volume):
+        for transform in self.transforms:
+            seed = torch.randint(0, 2**32, (1,)).item()
+            
+            torch.manual_seed(seed)
+            input_volume = transform(input_volume)
+            
+            torch.manual_seed(seed)
+            output_volume = transform(output_volume)
+                
+        return input_volume, output_volume
+
 # Torchvision transforms do not work on floating point numbers
 class MinMaxNormalize:
     def __init__ (self, min_tensor, max_tensor):
@@ -145,20 +162,56 @@ class MinMaxNormalize:
 
 
 class GaussianBlurFloats:
-    def __init__(self, sigma=2):
+    def __init__(self, p=1, sigma=2):
         self.sigma = sigma
+        self.p = p  # Probability of applying the  blur
 
     def __call__(self, img):
         # Convert tensor to numpy array
         image_array = img.cpu().numpy()
 
-        # Apply Gaussian filter to each channel
-        blurred_array = gaussian_filter(image_array, sigma=self.sigma)
+        if random.random() < self.p:
+            # Apply Gaussian filter to each channel
+            self.sigma = random.random() * self.sigma  # A random number between 0 and the max sigma
+            blurred_array = gaussian_filter(image_array, sigma=self.sigma)
+        else: 
+            blurred_array = image_array
 
         # Convert back to tensor
         blurred_tensor = torch.tensor(blurred_array, dtype=img.dtype, device=img.device)
 
         return blurred_tensor
+
+class Random3DCrop: # Crop image to be multiple of 8
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size, output_size)
+        else:
+            assert len(output_size) == 3
+            self.output_size = output_size
+
+    def __call__(self, img):
+        h, w, d = img.shape[-3:]
+
+        new_h, new_w, new_d = self.output_size
+
+        top = torch.randint(0, h - new_h + 1, (1,)).item()
+        left = torch.randint(0, w - new_w + 1, (1,)).item()
+        front = torch.randint(0, d - new_d + 1, (1,)).item()
+        
+        return img[top: top + new_h,
+                   left: left + new_w,
+                   front: front + new_d]
+        
+class Resize3D:
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, img):
+        img = img.unsqueeze(0).unsqueeze(0)  # Interpolate takes input tensors that have a batch and channel dimensions
+        img = F.interpolate(img, size=self.size, mode='trilinear', align_corners=True)
+        return img.squeeze(0).squeeze(0)
 
 
 # CUSTOM LOSSES
@@ -323,27 +376,9 @@ def torch_cubic_interp1d_2d(x, y, x_new):
 
 def plot_slices(trained_model, loader, device, mean_input=0, std_input=1,
                 mean_output=0, std_output=1, y_slice = 30,
-                save_plot_dir = "images/sample.png"):
-    # Loading a few examples
-    iter_loader = iter(loader)
-    input, target = next(iter_loader)
-    trained_model.eval()  # Putting the model in validation mode
-    output = trained_model(input.to(device))
-
-    output = output.detach().cpu()  # Detaching from the computational graph
-    torch.cuda.empty_cache()  # Freeing up RAM 
-    
-    while input.shape[0] < 3:
-        # If the batch size is 1 or 2, load more examples
-        input_i, target_i = next(iter_loader)
-        output_i = trained_model(input_i.to(device))
-
-        output_i = output_i.detach().cpu()  # Detaching from the computational graph
-        torch.cuda.empty_cache()  # Freeing up RAM 
+                save_plot_dir = "images/sample.png", patches=False, patch_size=56):
         
-        input = torch.cat((input, input_i))
-        output = torch.cat((output, output_i))
-        target = torch.cat((target, target_i))
+    input, output, target = get_input_output_target(trained_model, loader, device, patches, patch_size)
 
     sns.set()
     n_plots = 3
@@ -410,28 +445,8 @@ def plot_slices(trained_model, loader, device, mean_input=0, std_input=1,
 
 # Plotting dose-depth profile
 def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
-             y_slice = 30, save_plot_dir = "images/ddp.png"):
-    # Loading a few examples
-    iter_loader = iter(loader)
-    input, target = next(iter_loader)
-    trained_model.eval()  # Putting the model in validation mode
-    output = trained_model(input.to(device))
-
-    output = output.detach().cpu()  # Detaching from the computational graph
-    torch.cuda.empty_cache()  # Freeing up RAM 
-    
-    while input.shape[0] < 3:
-        # If the batch size is 1 or 2, load more examples
-        input_i, target_i = next(iter_loader)
-        output_i = trained_model(input_i.to(device))
-
-        output_i = output_i.detach().cpu()  # Detaching from the computational graph
-        torch.cuda.empty_cache()  # Freeing up RAM 
-        
-        input = torch.cat((input, input_i))
-        output = torch.cat((output, output_i))
-        target = torch.cat((target, target_i))
-
+             save_plot_dir = "images/ddp.png", patches=False, patch_size=56):
+    _, output, target = get_input_output_target(trained_model, loader, device, patches, patch_size)
     sns.set()
     n_plots = 3
     fig, axs = plt.subplots(n_plots, 1, figsize=[12, 12])
@@ -457,3 +472,74 @@ def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
 
     fig.savefig(save_plot_dir, dpi=300, bbox_inches='tight')
 
+
+def get_input_output_target(trained_model, loader, device, patches, patch_size):
+
+    # Loading a few examples
+    iter_loader = iter(loader)
+    input, target = next(iter_loader)
+    trained_model.eval()  # Putting the model in validation mode
+    if patches:
+        input, output, target = apply_model_to_patches(trained_model, input, target, patch_size)
+    else: 
+        output = trained_model(input.to(device))
+
+    output = output.detach().cpu()  # Detaching from the computational graph
+    torch.cuda.empty_cache()  # Freeing up RAM 
+    
+    while input.shape[0] < 3:
+        # If the batch size is 1 or 2, load more examples
+        input_i, target_i = next(iter_loader)
+        if patches:
+            input_i, output_i, target_i = apply_model_to_patches(trained_model, input, target, patch_size)
+        else:
+            output_i = trained_model(input_i.to(device))
+
+        output_i = output_i.detach().cpu()  # Detaching from the computational graph
+        torch.cuda.empty_cache()  # Freeing up RAM 
+        
+        input = torch.cat((input, input_i))
+        output = torch.cat((output, output_i))
+        target = torch.cat((target, target_i))
+
+    return input, output, target
+
+def apply_model_to_patches(trained_model, input, target, patch_size):
+    # Initialize an empty tensor to hold the reconstructed image
+    reconstructed_input = torch.zeros_like(input)
+    reconstructed_output = torch.zeros_like(input)
+    reconstructed_target = torch.zeros_like(input)
+    
+    # Loop through the image to get patches and their positions
+    positions = []
+    input_patches = []
+    target_patches = []
+
+    x_stop = input.shape[1] - patch_size + 1  # Final patch starting position
+    x_patch_start = list(range(0, x_stop, patch_size))
+    if x_patch_start[-1] != x_stop - 1: x_patch_start.append(x_stop - 1)
+    y_stop = input.shape[2] - patch_size + 1 
+    y_patch_start = list(range(0, y_stop, patch_size))
+    if y_patch_start[-1] != y_stop - 1: y_patch_start.append(y_stop - 1)
+    z_stop = input.shape[3] - patch_size + 1
+    z_patch_start = list(range(0, z_stop, patch_size))
+    if z_patch_start[-1] != z_stop - 1: z_patch_start.append(z_stop - 1)
+    
+    for x in x_patch_start:
+        for y in y_patch_start:
+            for z in z_patch_start:
+                input_patches.append(input[:, x:x+patch_size, y:y+patch_size, z:z+patch_size])
+                target_patches.append(target[:, x:x+patch_size, y:y+patch_size, z:z+patch_size])
+                positions.append((x, y, z))
+
+    # Apply model to each patch
+    for input_patch, target_patch, (x, y, z) in zip(input_patches, target_patches, positions):
+        # Assuming your model expects a 5D tensor of shape (batch, channel, x, y, z)
+        output_patch = trained_model(input_patch)
+        
+        # Add the output patch to the corresponding position in the reconstructed image
+        reconstructed_input[:, x:x+patch_size, y:y+patch_size, z:z+patch_size] = input_patch
+        reconstructed_output[:, x:x+patch_size, y:y+patch_size, z:z+patch_size] = output_patch
+        reconstructed_target[:, x:x+patch_size, y:y+patch_size, z:z+patch_size] = target_patch
+
+    return reconstructed_input, reconstructed_output, reconstructed_target
