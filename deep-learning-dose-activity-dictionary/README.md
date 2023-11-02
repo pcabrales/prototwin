@@ -40,5 +40,3 @@ This repository is dedicated to the development and testing of deep learning mod
 - Archive of older versions and unused files. Not for current use.
 
 ---
-
-Feel free to contribute and raise issues! 🌟
