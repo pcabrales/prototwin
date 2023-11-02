@@ -9,17 +9,19 @@
 
 from train_model import train
 from test_model import test
-from utils import set_seed, DoseActivityDataset, plot_slices, plot_ddp, GaussianBlurFloats, Random3DCrop, JointCompose, Resize3D
+from utils import set_seed, DoseActivityDataset, plot_slices, plot_ddp, GaussianBlurFloats, back_and_forth, JointCompose, Resize3D
 seed = 42
 set_seed(seed)
 import torch
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Normalize, RandomHorizontalFlip, RandomVerticalFlip
+from torchvision.transforms import Compose, Normalize
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Creating the dataset
 input_dir = "data/dataset_1/input"
 output_dir = "data/dataset_1/output"
+
+
 
 # Statistics of the dataset (previously found for the entire Prostate dataset)
 mean_input = 0.002942
@@ -32,7 +34,6 @@ std_output = 0.00000662656
 max_output = 0.00060621166
 min_output = 0.0
 
-
 # Transformations
 input_transform = Compose([
     GaussianBlurFloats(p=0.3, sigma=1),
@@ -44,12 +45,9 @@ output_transform = Compose([
 ])
 
 
-patch_size = 64
+img_size = (128, 64, 64)
 joint_transform = JointCompose([
-    RandomHorizontalFlip(p=0.3),
-    RandomVerticalFlip(p=0.3),
-    # Random3DCrop(56)
-    Resize3D((patch_size, patch_size, patch_size))
+    Resize3D(img_size)
 ])
 set_seed(seed)
 
@@ -70,54 +68,41 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-from models.SwinUNETR import SwinUNETR#TransBTS
+from models.SwinUNETR import SwinUNETR
 # Create the model
 patches = False
-model = SwinUNETR(patch_size, 1, 1, feature_size=12).to(device)
-###
-# input_batch,_ = next(iter(train_loader))
-# output_batch = model(input_batch)
-# print(output_batch.shape)
-# stop
-###
+model = SwinUNETR(img_size=img_size, in_channels=1, out_channels=1, feature_size=12).to(device)
 
-model_dir = 'models/trained-models/SwinUNETR-v1.pth'
-timing_dir = 'models/training-times/training-time-SwinUNETR-v1.txt'
-n_epochs = 1
-save_plot_dir = "images/SwinUNETR-v1-loss.png"
-# trained_model = train(model, train_loader, val_loader, epochs=n_epochs, ###
+# model_dir = 'models/trained-models/reverse-SwinUNETR-v1.pth'
+# timing_dir = 'models/training-times/training-time-reverse-SwinUNETR-v1.txt'
+# n_epochs = 30
+# save_plot_dir = "images/reverse-SwinUNETR-v1-loss.png"
+# trained_model = train(model, train_loader, val_loader, epochs=n_epochs,
 #                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
 
-# Loading the trained model
-model_dir = "models/trained-models/SwinUNETR-v1.pth"
-trained_model = torch.load(model_dir, map_location=torch.device(device))
+# # Loading the trained model
+# model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
+# trained_model = torch.load(model_dir, map_location=torch.device(device))
 
-###
-# input_transform = Compose([
-#     Normalize(mean_input, std_input)
-# ])
-# output_transform = Compose([
-#     Normalize(mean_output, std_output)
-# ])
+# plot_loader = test_loader
 
-# # Create dataset without cropping
-# num_samples_plot = 3
-# plotting_set = DoseActivityDataset(input_dir=input_dir, output_dir=output_dir, 
-#                                    input_transform=input_transform, output_transform=output_transform, 
-#                                    num_samples=num_samples_plot)
-# plot_loader = DataLoader(plotting_set, batch_size=num_samples_plot, shuffle=False, num_workers=0)
-plot_loader = test_loader
-###
-
-# Plotting slices of the dose
-plot_slices(trained_model, plot_loader, device, mean_input=mean_input, std_input=std_input,
-            mean_output=mean_output, std_output=std_output,
-            save_plot_dir = "images/SwinUNETR-v1-sample.png", y_slice=patch_size//2, patches=patches, patch_size=patch_size) 
+# # Plotting slices of the dose
+# plot_slices(trained_model, plot_loader, device, mean_input=mean_input, std_input=std_input,
+#             mean_output=mean_output, std_output=std_output,
+#             save_plot_dir = "images/reverse-SwinUNETR-v1-sample.png", y_slice=img_size[2]//2, patches=patches, patch_size=img_size[2]//2) 
  
-# Plotting the dose-depth profiles
-save_plot_dir = "images/SwinUNETR-v1-ddp.png"
-plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
-         std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=patch_size)
+# # Plotting the dose-depth profiles
+# save_plot_dir = "images/reverse-SwinUNETR-v1-ddp.png"
+# plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
+#          std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
 
-results_dir = 'models/test-results/SwinUNETR-v1-results.txt'
-test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output)
+# results_dir = 'models/test-results/reverse-SwinUNETR-v1-results.txt'
+# test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output)
+
+
+dose2act_model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
+dose2act_model = torch.load(dose2act_model_dir, map_location=torch.device(device))
+act2dose_model_dir = "models/trained-models/SwinUNETR-v2.pth"
+act2dose_model = torch.load(act2dose_model_dir, map_location=torch.device(device))
+back_and_forth(dose2act_model, act2dose_model, test_loader, device, reconstruct_dose=False, num_cycles=3, y_slice=32, 
+               mean_act=mean_input, std_act=std_input, mean_dose=mean_output, std_dose=std_output, save_plot_dir="images/reconstructed_act.png")

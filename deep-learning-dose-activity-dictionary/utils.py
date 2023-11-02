@@ -543,3 +543,73 @@ def apply_model_to_patches(trained_model, input, target, patch_size):
         reconstructed_target[:, x:x+patch_size, y:y+patch_size, z:z+patch_size] = target_patch
 
     return reconstructed_input, reconstructed_output, reconstructed_target
+
+
+def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reconstruct_dose=False, num_cycles=1, y_slice=32, mean_act=0, std_act=1, mean_dose=0, std_dose=1, save_plot_dir="images/reconstructed.png"):
+    # If dose is set to true, then the dose image is converted to activity and back to dose again.
+    # If it is set to False, that is done instead for activity images.
+    # num_cycles defined the number of times that the cycle is applied
+
+    # Loading a few examples
+    iter_loader = iter(act2dose_loader)
+    act, dose = next(iter_loader)
+    dose_original = dose.detach().cpu()
+    act_original = act.detach().cpu()
+    torch.cuda.empty_cache()  # Freeing up RAM 
+    
+    dose2act_model.eval()  # Putting the model in validation mode
+    act2dose_model.eval()  # Putting the model in validation mode
+    
+    for i in range(num_cycles):
+        if reconstruct_dose:
+            act = dose2act_model(dose.to(device))
+            dose = act2dose_model(act.to(device))
+        else:
+            dose = act2dose_model(act.to(device))
+            act = dose2act_model(dose.to(device))
+            
+    dose = dose.detach().cpu()  # Detaching from the computational graph
+    act = act.detach().cpu()  
+    torch.cuda.empty_cache()  # Freeing up RAM 
+    
+    sns.set()
+    n_plots = 3
+    font_size = 14
+    fig, axs = plt.subplots(n_plots, 3, figsize=[12, 12])
+    
+    if reconstruct_dose:
+        reconstruced_imgs = mean_dose + dose * std_dose  # undoing normalization
+        original_imgs = mean_dose + dose_original * std_dose  # undoing normalization
+
+        axs[0, 0].set_title("Original dose", fontsize=font_size)
+        title_reconstructed = "Reconstructed dose after " + str(num_cycles) + " cycle(s)"
+
+    else:
+        reconstruced_imgs = mean_act + act * std_act  # undoing normalization
+        original_imgs = mean_act + act_original * std_act  # undoing normalization
+
+        axs[0, 0].set_title("Original activity", fontsize=font_size)
+        title_reconstructed = "Reconstructed activity after " + str(num_cycles) + " cycle(s)"
+        
+    axs[0, 1].set_title(title_reconstructed, fontsize=font_size)
+    axs[0, 2].set_title("|Reconstructed - Original|", fontsize=font_size)
+    for idx in range(n_plots):
+        original_img = original_imgs[idx].squeeze(0)[:,y_slice,:]
+        reconstructed_img = reconstruced_imgs[idx].squeeze(0)[:,y_slice,:]
+        diff_img = abs(reconstructed_img - original_img)
+        c1 = axs[idx, 0].imshow(np.flipud(original_img).T, cmap='jet', aspect='auto')
+        axs[idx, 0].set_xticks([])
+        axs[idx, 0].set_yticks([])
+        c2 = axs[idx, 1].imshow(np.flipud(reconstructed_img).T, vmax=torch.max(original_img), cmap='jet', aspect='auto')
+        axs[idx, 1].set_xticks([])
+        axs[idx, 1].set_yticks([])
+        axs[idx, 2].imshow(np.flipud(diff_img).T, cmap='jet', vmax=torch.max(original_img), aspect='auto')
+        axs[idx, 2].set_xticks([])
+        axs[idx, 2].set_yticks([])
+
+
+    fig.tight_layout()
+    fig.savefig(save_plot_dir, dpi=300, bbox_inches='tight')
+
+
+    return None
