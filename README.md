@@ -1,6 +1,6 @@
 # Pablo Cabrales' Prototwin Repository 📂
 
-🎓 **PhD Student at the Nuclear Physics Group from the Complutense University of Madrid** - This repository hosts projects and resources related to my academic research.
+🎓 **PhD Student at the Nuclear Physics Group, Complutense University of Madrid** - This repository hosts projects and resources related to my academic research.
 
 ## deep-learning-dose-activity-dictionary 🧠
 This folder contains material related to the application of deep learning to dose deposition prediction from PET activity measurements in proton therapy.
