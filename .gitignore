@@ -1,6 +1,4 @@
 data/
-models/
+models/trained-models/
 *Zone.Identifier
-images/
-old-files/
 *.pyc
