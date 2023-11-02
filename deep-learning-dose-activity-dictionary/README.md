@@ -11,15 +11,14 @@ This repository is dedicated to the development and testing of deep learning mod
 6. [Old Files](#old-files)
 
 ## Images 🖼️
-- Includes:
-  - depth-dose profiles comparing the predicted and the ground truth dosages
-  - slices comparing the predicted and the ground truth dosages for a given activity
-  - training and validation losses vs number of epochs
-  - recursive application of the direct and reverse model as a sanity check
+- Depth-dose profiles (*ddp*) comparing the predicted and the ground truth dosages
+- Sample slices comparing the predicted and the ground truth dosages for a given activity
+- Training and validation losses vs number of epochs
+- Recursive application of the direct and reverse model as a sanity check
   
 ## Models 🤖
 - SwinUNETR.py: Implementation of the SwinUNETR model adapted from MONAI.
-- TransBTS.py: Code for the TransBTS model from the [official GitHub page](https://github.com/Rubics-Xuan/TransBTS).
+- TransBTS.py: Code for the TransBTS model adapted from the [official GitHub page](https://github.com/Rubics-Xuan/TransBTS).
 - models.py: u-nets and attention u-nets.
 
 ## Testing 🔍
