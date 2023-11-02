@@ -14,7 +14,3 @@ General-purpose folder containing miscellaneous items and other resources.
 🔗 [Navigate to xcat](./xcat/)
 
 ---
-
-### Using the repo 🚀
-1. Clone the repository: 
-git clone https://github.com/pcabrales/prototwin.git
