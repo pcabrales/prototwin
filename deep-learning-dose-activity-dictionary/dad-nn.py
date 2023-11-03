@@ -21,8 +21,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 input_dir = "data/dataset_1/input"
 output_dir = "data/dataset_1/output"
 
-
-
 # Statistics of the dataset (previously found for the entire Prostate dataset)
 mean_input = 0.002942
 std_input = 0.036942
@@ -73,36 +71,36 @@ from models.SwinUNETR import SwinUNETR
 patches = False
 model = SwinUNETR(img_size=img_size, in_channels=1, out_channels=1, feature_size=12).to(device)
 
-# model_dir = 'models/trained-models/reverse-SwinUNETR-v1.pth'
-# timing_dir = 'models/training-times/training-time-reverse-SwinUNETR-v1.txt'
-# n_epochs = 30
-# save_plot_dir = "images/reverse-SwinUNETR-v1-loss.png"
-# trained_model = train(model, train_loader, val_loader, epochs=n_epochs,
-#                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
+model_dir = 'models/trained-models/SwinUNETR-v3.pth'
+timing_dir = 'models/training-times/training-time-SwinUNETR-v3.txt'
+n_epochs = 60
+save_plot_dir = "images/SwinUNETR-v3-loss.png"
+trained_model = train(model, train_loader, val_loader, epochs=n_epochs,
+                      model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
 
-# # Loading the trained model
-# model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
-# trained_model = torch.load(model_dir, map_location=torch.device(device))
+# Loading the trained model
+model_dir = "models/trained-models/SwinUNETR-v3.pth"
+trained_model = torch.load(model_dir, map_location=torch.device(device))
 
-# plot_loader = test_loader
+plot_loader = test_loader
 
-# # Plotting slices of the dose
-# plot_slices(trained_model, plot_loader, device, mean_input=mean_input, std_input=std_input,
-#             mean_output=mean_output, std_output=std_output,
-#             save_plot_dir = "images/reverse-SwinUNETR-v1-sample.png", y_slice=img_size[2]//2, patches=patches, patch_size=img_size[2]//2) 
+# Plotting slices of the dose
+plot_slices(trained_model, plot_loader, device, mean_input=mean_input, std_input=std_input,
+            mean_output=mean_output, std_output=std_output,
+            save_plot_dir = "images/SwinUNETR-v3-sample.png", y_slice=img_size[2]//2, patches=patches, patch_size=img_size[2]//2) 
  
-# # Plotting the dose-depth profiles
-# save_plot_dir = "images/reverse-SwinUNETR-v1-ddp.png"
-# plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
-#          std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
+# Plotting the dose-depth profiles
+save_plot_dir = "images/SwinUNETR-v3-ddp.png"
+plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
+         std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
 
-# results_dir = 'models/test-results/reverse-SwinUNETR-v1-results.txt'
-# test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output)
+results_dir = 'models/test-results/SwinUNETR-v3-results.txt'
+test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output)
 
 
-dose2act_model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
-dose2act_model = torch.load(dose2act_model_dir, map_location=torch.device(device))
-act2dose_model_dir = "models/trained-models/SwinUNETR-v2.pth"
-act2dose_model = torch.load(act2dose_model_dir, map_location=torch.device(device))
-back_and_forth(dose2act_model, act2dose_model, test_loader, device, reconstruct_dose=False, num_cycles=3, y_slice=32, 
-               mean_act=mean_input, std_act=std_input, mean_dose=mean_output, std_dose=std_output, save_plot_dir="images/reconstructed_act.png")
+# dose2act_model_dir = "models/trained-models/SwinUNETR-v3.pth"
+# dose2act_model = torch.load(dose2act_model_dir, map_location=torch.device(device))
+# act2dose_model_dir = "models/trained-models/SwinUNETR-v2.pth"
+# act2dose_model = torch.load(act2dose_model_dir, map_location=torch.device(device))
+# back_and_forth(dose2act_model, act2dose_model, test_loader, device, reconstruct_dose=False, num_cycles=3, y_slice=32, 
+#                mean_act=mean_input, std_act=std_input, mean_dose=mean_output, std_dose=std_output, save_plot_dir="images/reconstructed_act.png")
