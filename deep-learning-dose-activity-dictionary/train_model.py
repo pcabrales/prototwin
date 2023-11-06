@@ -12,7 +12,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
           save_plot_dir='.'):
     start_time = time.time()  # Timing the training time
     # Initializing the optimizer for the model parameters
-    optim = torch.optim.Adam(model.parameters(), lr=0.001)
+    optim = torch.optim.AdamW(model.parameters(), lr=0.001)
     liveloss = PlotLosses()  # Object to track validation and training losses across epochs
     l2_loss = nn.MSELoss()
     e=0###
