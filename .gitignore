@@ -1,4 +1,5 @@
 data/
+GenerativeModels/
 deep-learning-dose-activity-dictionary/models/trained-models
 *Zone.Identifier
 *.pyc

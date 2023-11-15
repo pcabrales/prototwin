@@ -9,13 +9,15 @@
 
 from train_model import train
 from test_model import test
-from utils import set_seed, DoseActivityDataset, plot_slices, plot_ddp, GaussianBlurFloats, back_and_forth, JointCompose, Resize3D
+from utils import set_seed, DoseActivityDataset, plot_slices, plot_ddp, GaussianBlurFloats, back_and_forth, JointCompose, Resize3D, GaussianBlob
 seed = 42
 set_seed(seed)
 import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device) ###
+print(torch.cuda.get_device_name(torch.cuda.current_device()))###
 
 # Creating the dataset
 input_dir = "data/dataset_1/input"
@@ -47,9 +49,11 @@ img_size = (128, 64, 64)
 joint_transform = JointCompose([
     Resize3D(img_size)
 ])
+
+
 set_seed(seed)
 
-num_samples = 200###948
+num_samples = 948
 # Create dataset applying the transforms
 dataset = DoseActivityDataset(input_dir=input_dir, output_dir=output_dir,
                               input_transform=input_transform, output_transform=output_transform, joint_transform=joint_transform,
@@ -62,8 +66,8 @@ test_size = len(dataset) - train_size - val_size
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
 
 # Create DataLoaders for training
-batch_size = 16###8  # Largest batch size without running out of memory
-num_workers = 4###2
+batch_size = 1
+num_workers = 4
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -71,38 +75,59 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num
 from models.SwinUNETR import SwinUNETR
 # Create the model
 patches = False
-model = SwinUNETR(img_size=img_size, in_channels=1, out_channels=1, feature_size=24).to(device)
+model = SwinUNETR(img_size=img_size, in_channels=1, out_channels=1).to(device)
 
-model_dir = 'models/trained-models/SwinUNETR-v5.pth'
-timing_dir = 'models/training-times/training-time-SwinUNETR-v5.txt'
-n_epochs = 10###60
-save_plot_dir = "images/SwinUNETR-v5-loss.png"
-trained_model = train(model, train_loader, val_loader, epochs=n_epochs,
-                      model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
+model_dir = 'models/trained-models/SwinUNETR-v11.pth'
+timing_dir = 'models/training-times/training-time-SwinUNETR-v11.txt'
+n_epochs = 30
+save_plot_dir = "images/SwinUNETR-v11-loss.png"
+# trained_model = train(model, train_loader, val_loader, epochs=n_epochs,
+#                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
 
 # Loading the trained model
-model_dir = "models/trained-models/SwinUNETR-v5.pth"
+model_dir = "models/trained-models/SwinUNETR-v11.pth"
 trained_model = torch.load(model_dir, map_location=torch.device(device))
 
-plot_loader = test_loader
+
+###
+input_transform = Compose([
+    GaussianBlob(30, 5),
+    Normalize(mean_input, std_input)
+])
+
+output_transform = Compose([
+    Normalize(mean_output, std_output)
+])
+joint_transform = JointCompose([
+    Resize3D(img_size)
+])
+
+blob_dataset = DoseActivityDataset(input_dir=input_dir, output_dir=output_dir,
+                              input_transform=input_transform, output_transform=output_transform, joint_transform=joint_transform,
+                              num_samples=30)
+
+plot_loader = DataLoader(blob_dataset, batch_size=2, shuffle=True, num_workers=1)
+###
+# plot_loader = test_loader###
 
 # Plotting slices of the dose
+save_plot_dir = "images/SwinUNETR-v11-blank-sample.png"
 plot_slices(trained_model, plot_loader, device, mean_input=mean_input, std_input=std_input,
             mean_output=mean_output, std_output=std_output,
-            save_plot_dir = "images/SwinUNETR-v5-sample.png", y_slice=img_size[2]//2, patches=patches, patch_size=img_size[2]//2) 
+            save_plot_dir=save_plot_dir, y_slice=img_size[2]//2, patches=patches, patch_size=img_size[2]//2) 
  
 # Plotting the dose-depth profiles
-save_plot_dir = "images/SwinUNETR-v5-ddp.png"
+save_plot_dir = "images/SwinUNETR-v11-blank-ddp.png"
 plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
          std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
 
-results_dir = 'models/test-results/SwinUNETR-v5-results.txt'
-test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output)
+# results_dir = 'models/test-results/SwinUNETR-v11-results.txt'
+# test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output)
 
 
-# dose2act_model_dir = "models/trained-models/SwinUNETR-v5.pth"
-# dose2act_model = torch.load(dose2act_model_dir, map_location=torch.device(device))
-# act2dose_model_dir = "models/trained-models/SwinUNETR-v2.pth"
-# act2dose_model = torch.load(act2dose_model_dir, map_location=torch.device(device))
-# back_and_forth(dose2act_model, act2dose_model, test_loader, device, reconstruct_dose=False, num_cycles=3, y_slice=32, 
-#                mean_act=mean_input, std_act=std_input, mean_dose=mean_output, std_dose=std_output, save_plot_dir="images/reconstructed_act.png")
+dose2act_model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
+dose2act_model = torch.load(dose2act_model_dir, map_location=torch.device(device))
+act2dose_model_dir = "models/trained-models/SwinUNETR-v11.pth"
+act2dose_model = torch.load(act2dose_model_dir, map_location=torch.device(device))
+back_and_forth(dose2act_model, act2dose_model, plot_loader, device, reconstruct_dose=False, num_cycles=3, y_slice=32, 
+               mean_act=mean_input, std_act=std_input, mean_dose=mean_output, std_dose=std_output, save_plot_dir="images/reconstructed_act_blob.png")

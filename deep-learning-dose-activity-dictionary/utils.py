@@ -212,6 +212,48 @@ class Resize3D:
         img = img.unsqueeze(0).unsqueeze(0)  # Interpolate takes input tensors that have a batch and channel dimensions
         img = F.interpolate(img, size=self.size, mode='trilinear', align_corners=True)
         return img.squeeze(0).squeeze(0)
+        
+class GaussianBlob:
+    def __init__(self, size, sigma, type_blob="gaussian"):
+        self.size = size
+        self.sigma = sigma
+        self.type_blob = type_blob
+
+    def __call__(self, img):
+        img = torch.tensor(img)
+        max_overall = torch.max(img)
+        idx_max_overall = np.unravel_index(torch.argmax(img), img.shape)
+        bool_img = img > 0.1 * max_overall  # Looking for the position just after the BP, since we will place the blur between the start and that position
+        bp_position = torch.where(bool_img.any(dim=1).any(dim=1))[0][0].item()
+        
+        # Create a 3D Gaussian kernel
+        ax = torch.arange(-self.size // 2 + 1., self.size // 2 + 1.)
+        xx, yy, zz = torch.meshgrid(ax, ax, ax)
+        kernel = 0.5 * max_overall * torch.exp(-(xx**2 + yy**2 + zz**2) / (2 * self.sigma**2))
+        
+        center = (random.randint(bp_position, img.shape[0] - 1), idx_max_overall[1], idx_max_overall[2])
+        
+        # Find the start and end indices for slicing
+        z_start = max(center[0] - self.size // 2, 0)
+        y_start = max(center[1] - self.size // 2, 0)
+        x_start = max(center[2] - self.size // 2, 0)
+        z_end = min(center[0] + self.size // 2 + 1, img.shape[0]) - 1
+        y_end = min(center[1] + self.size // 2 + 1, img.shape[1]) - 1
+        x_end = min(center[2] + self.size // 2 + 1, img.shape[2]) - 1
+
+        # Adjust the kernel size for edge cases
+        kernel = kernel[(z_start - center[0] + self.size // 2):(z_end - center[0] + self.size // 2),
+                        (y_start - center[1] + self.size // 2):(y_end - center[1] + self.size // 2),
+                        (x_start - center[2] + self.size // 2):(x_end - center[2] + self.size // 2)]
+
+        # Add the Gaussian blob to the tensor
+        
+        if self.type_blob == "blank":
+            img[z_start:z_end, y_start:y_end, x_start:x_end] = 0
+        else:
+            img[z_start:z_end, y_start:y_end, x_start:x_end] += kernel
+            
+        return img
 
 
 # CUSTOM LOSSES
@@ -449,15 +491,15 @@ def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
     _, output, target = get_input_output_target(trained_model, loader, device, patches, patch_size)
     sns.set()
     n_plots = 3
-    fig, axs = plt.subplots(n_plots, 1, figsize=[12, 12])
+    fig, axs = plt.subplots(n_plots, 1, figsize=[n_plots * 4, 12])
 
     output_scaled = mean_output + output * std_output  # undoing normalization
     target_scaled = mean_output + target * std_output    
 
-    axs[0].set_title("Dose profile")
+    font_size = 15
+    axs[0].set_title("Dose profile", fontsize=font_size)
 
     for idx in range(n_plots):
-        y_slice = 30
         out_img = output_scaled[idx].cpu().detach().squeeze(0).numpy()
         target_img = target_scaled[idx].cpu().detach().squeeze(0).numpy()
         out_profile = np.sum(out_img, axis=(1,2))
@@ -465,12 +507,14 @@ def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
         distance = np.flip(np.arange(len(out_profile)))
         axs[idx].plot(distance, out_profile, label="Calculated Dose", linewidth=2)
         axs[idx].plot(distance, target_profile, label="Target Dose", linewidth=2)
-        axs[idx].legend()
+        # axs[idx].plot(distance, target_profile, label="Dose", linewidth=2)
+        axs[idx].legend(fontsize=font_size)
         axs[idx].grid(True)
-        axs[idx].set_xlabel("Depth (mm)")
-        axs[idx].set_ylabel("Dose deposited (Gy)")
+        axs[idx].set_xlabel("Depth (mm)", fontsize=font_size)
+        axs[idx].set_ylabel("Dose deposited (Gy)", fontsize=font_size)
+        axs[idx].tick_params(axis='both', which='minor', labelsize=font_size)
 
-    fig.savefig(save_plot_dir, dpi=300, bbox_inches='tight')
+    fig.savefig(save_plot_dir, dpi=600, bbox_inches='tight')
 
 
 def get_input_output_target(trained_model, loader, device, patches, patch_size):
@@ -613,3 +657,39 @@ def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reco
 
 
     return None
+
+
+
+# def find_max_closest_to_edge(loader):
+#     closest_edge_distance = float('inf')
+#     closest_max_index = None
+#     closest_tensor = None
+    
+#     for _, batch in loader:
+#         # Find the maximum value in each 3D image of the batch
+#         max_vals, _ = torch.max(batch.view(batch.size(0), -1), dim=1)
+        
+#         # Iterate through the batch to find the index of the overall maximum in the last dimension
+#         for i, max_val in enumerate(max_vals):
+#             # Get the positions of the overall maximum values
+#             pos = (batch[i] == max_val).nonzero(as_tuple=True)
+#             # Consider the last dimension (W)
+#             max_index_last_dim = pos[-1]
+#             # Calculate the distance to the closest edge in the last dimension
+#             edge_distance = torch.min(max_index_last_dim, batch.shape[-1] - 1 - max_index_last_dim)
+#             edge_distance = max_index_last_dim
+#             if edge_distance < closest_edge_distance:
+#                 closest_edge_distance = edge_distance
+#                 closest_max_index = max_index_last_dim
+#                 closest_tensor = batch[i]
+
+    # # Now plot the 2D slice
+    # sample_2d_slice = closest_tensor[:,32,:].cpu().detach().numpy()
+    # plt.imshow(sample_2d_slice, cmap='gray')
+    # plt.colorbar()
+    # plt.title(f'2D slice of the sample with max value closest to the edge')
+    # plt.show()
+
+    # plt.savefig("images/test_closest_edge")
+
+#     return closest_max_index.item(), closest_tensor
