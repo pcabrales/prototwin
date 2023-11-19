@@ -6,9 +6,9 @@ import os
 from torch.utils.data import Dataset
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import interp1d
-import unfoldNd
 import seaborn as sns 
 import matplotlib.pyplot as plt
+from scipy.ndimage import zoom
 
 def set_seed(seed):
     """
@@ -29,15 +29,13 @@ class DoseActivityDataset(Dataset):
     Create the dataset where the activity is the input and the dose is the output.
     The relevant transforms are applied.
     """
-    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, joint_transform=None, CT=None, energy_beam_dict=None):
+    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, joint_transform=None):
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.input_transform = input_transform
         self.output_transform = output_transform
         self.joint_transform = joint_transform
-        self.energy_beam_dict = energy_beam_dict
         self.file_names = os.listdir(input_dir)[:num_samples]
-        self.CT = CT
 
     def __len__(self):
         return len(self.file_names)
@@ -48,8 +46,8 @@ class DoseActivityDataset(Dataset):
         output_volume = np.load(os.path.join(self.output_dir, self.file_names[idx]))
 
         # Convert numpy arrays to PyTorch tensors
-        input_volume = torch.tensor(input_volume, dtype=torch.float32).unsqueeze(0)
-        output_volume = torch.tensor(output_volume, dtype=torch.float32).unsqueeze(0)
+        input_volume = torch.tensor(input_volume, dtype=torch.float32)
+        output_volume = torch.tensor(output_volume, dtype=torch.float32)
 
         # Apply transforms
         if self.input_transform:
@@ -58,18 +56,8 @@ class DoseActivityDataset(Dataset):
             output_volume = self.output_transform(output_volume)
         if self.joint_transform:
             input_volume, output_volume = self.joint_transform(input_volume, output_volume)
-        if self.CT is not None:
-            input_volume = torch.cat((input_volume, torch.tensor(self.CT, dtype=torch.float32).unsqueeze(0)))
-        if self.energy_beam_dict is not None:
-            beam_number = self.file_names[idx][0:4]
-            beam_energy = self.energy_beam_dict.get(beam_number, 0.0)
-            if (beam_energy == 0.0):
-                print(beam_number)
-            beam_energy = float(beam_energy) / 1000  # from keV to MeV
-        else: 
-            beam_energy = "N/A"
-        
-        return input_volume, output_volume, beam_energy
+            
+        return input_volume, output_volume
 
 
 # Function to get means, standard deviations, minimum and maximum values of the selected data
@@ -138,7 +126,7 @@ class GaussianBlurFloats:
 
     def __call__(self, img):
         # Convert tensor to numpy array
-        image_array = img.squeeze(0).cpu().numpy()
+        image_array = img.cpu().numpy()
 
         if random.random() < self.p:
             # Apply Gaussian filter to each channel
@@ -148,7 +136,7 @@ class GaussianBlurFloats:
             blurred_array = image_array
 
         # Convert back to tensor
-        blurred_tensor = torch.tensor(blurred_array, dtype=img.dtype, device=img.device).unsqueeze(0)
+        blurred_tensor = torch.tensor(blurred_array, dtype=img.dtype, device=img.device)
 
         return blurred_tensor
 
@@ -170,52 +158,18 @@ class Random3DCrop: # Crop image to be multiple of 8
         left = torch.randint(0, w - new_w + 1, (1,)).item()
         front = torch.randint(0, d - new_d + 1, (1,)).item()
         
-        return img[:,
-                   top: top + new_h,
+        return img[top: top + new_h,
                    left: left + new_w,
                    front: front + new_d]
         
 class Resize3D:
-    # This function resizes by interpolatingg
     def __init__(self, size):
         self.size = size
 
     def __call__(self, img):
-        img = img.unsqueeze(0)  # Interpolate takes input tensors that have a batch and channel dimensions
+        img = img.unsqueeze(0).unsqueeze(0)  # Interpolate takes input tensors that have a batch and channel dimensions
         img = F.interpolate(img, size=self.size, mode='trilinear', align_corners=True)
-        return img.squeeze(0)
-    
-class ResizeCropAndPad3D:
-    # This function resizes by cropping and padding
-    def __init__(self, size):
-        self.size = size
-
-    def __call__(self, img):
-        img = img.unsqueeze(1)  # Pad takes input tensors that have a batch and channel dimensions
-        pad_right = pad_left = pad_top = pad_bottom = pad_front = pad_back = 0
-        if self.size[0] > img.shape[2]:
-            pad_left = self.size[0] - img.shape[2]
-        elif self.size[0] < img.shape[2]:
-            img = img[:, :, img.shape[2] - self.size[0] : , 
-                      :, :]
-        if self.size[1] > img.shape[3]:
-            pad_top = (self.size[1] - img.shape[3]) // 2
-            pad_bottom = self.size[1] - img.shape[3] - pad_top
-        elif self.size[1] < img.shape[3]: 
-            crop_top = (img.shape[3] - self.size[1]) // 2
-            crop_bottom = img.shape[3] - self.size[1] - crop_top
-            img = img[:, :, :, crop_top : img.shape[3] - crop_bottom, 
-                      :]
-        if self.size[2] > img.shape[4]:
-            pad_front = (self.size[2] - img.shape[4]) // 2
-            pad_back = self.size[2] - img.shape[4] - pad_front
-        elif self.size[2] < img.shape[4]:
-            crop_front = (img.shape[4] - self.size[2]) // 2
-            crop_back = img.shape[4] - self.size[2] - crop_front
-            img = img[:, :, :, :, crop_front : img.shape[4] - crop_back]
-            
-        img = F.pad(img, (pad_front, pad_back, pad_top, pad_bottom, pad_left, pad_right), mode='constant', value=torch.min(img))
-        return img.squeeze(1)
+        return img.squeeze(0).squeeze(0)
         
 class GaussianBlob:
     def __init__(self, size, sigma, type_blob="gaussian"):
@@ -224,7 +178,7 @@ class GaussianBlob:
         self.type_blob = type_blob
 
     def __call__(self, img):
-        img = img.squeeze(0)
+        img = torch.tensor(img)
         max_overall = torch.max(img)
         idx_max_overall = np.unravel_index(torch.argmax(img), img.shape)
         bool_img = img > 0.1 * max_overall  # Looking for the position just after the BP, since we will place the blur between the start and that position
@@ -257,7 +211,7 @@ class GaussianBlob:
         else:
             img[z_start:z_end, y_start:y_end, x_start:x_end] += kernel
             
-        return img.unsqueeze(0)
+        return img
 
 
 # CUSTOM LOSSES
@@ -285,8 +239,6 @@ def manual_permute(tensor, dims):
     return tensor
 
 def post_BP_loss(output, target, device="cpu", mean_output=0, std_output=1):
-    output = output.squeeze(1)  # Eliminate channel dim
-    target = target.squeeze(1)
     longitudinal_size = output.shape[1]
     output = mean_output + output * std_output  # undoing normalization
     target = mean_output + target * std_output
@@ -326,8 +278,6 @@ def range_loss(output, target, range_val=0.9, device="cpu", mean_output=0, std_o
     the dose reaches a certain percentage of the Bragg Peak dose after the Bragg Peak.
     This is done for every curve in the transversal plane where the BP is larger than 0.05 of the max BP.
     '''
-    output = output.squeeze(1)  # Eliminate channel dim
-    target = target.squeeze(1)
     longitudinal_size = output.shape[1]
     output = mean_output + output * std_output  # undoing normalization
     target = mean_output + target * std_output
@@ -375,49 +325,6 @@ def range_loss(output, target, range_val=0.9, device="cpu", mean_output=0, std_o
     # plt.plot(depth_at_range_output[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
     return depth_at_range_output - depth_at_range
 
-
-# Range deviation
-def gamma_index(output, target, tolerance=0.03, beta=5, mean_output=0, std_output=1, threshold=0.2):
-    # So far, we only consider neighbouring pixels, which we assume have a distance = 0 between them
-    # Tolerance is set as default to 3%, threshold = 0.2  as set in Sonia Martinot's paper
-    
-    output = mean_output + output * std_output  # undoing normalization
-    target = mean_output + target * std_output
-    target = target.squeeze(1)  # no need to squeeze **output** as it is done when we unfold it
-
-    max_target = torch.amax(target, dim=(1, 2, 3)) # Overall max for each image in the batch
-    target = target / max_target.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # normalising to the maximum dose so that we can later directly apply the threshold
-    output = output / max_target.unsqueeze(-1).unsqueeze(-1)
-    
-    # Define Unfold layer
-    unfold = unfoldNd.UnfoldNd(kernel_size=3, stride=1, padding=1)
-    
-    # Apply Unfold 
-    # Output shape: (batch_size, channels * kernel_size * kernel_size, L)
-    output_unfolded = unfold(output)
-    
-    # finding the values in the target vector larger than a certain threshold wrt the max
-    target_flat = target.flatten(start_dim=1, end_dim=3)
-    voxels_threshold = target_flat > threshold
-
-    target_threshold = target_flat[voxels_threshold]
-    num_voxels_above_threshold = target_threshold.shape[0]
-    
-    # permuted to select the spatial indices without touching the kernel dimension, which was in dim=1 but we are moving it to dim=0, switching
-    # it with batch size, which we do want to consider
-    output_unfolded = manual_permute(output_unfolded, (1, 0, 2))
-    output_threshold = output_unfolded[:, voxels_threshold]  # only keeping those above the threshold
-
-    diff = torch.abs(output_threshold - target_threshold.unsqueeze(0))  # difference between the output and target
-
-    gamma = torch.amin(diff, dim=0) / tolerance  # minimum among all neighbours, as in the gamma index function
-    
-    gamma_index_batch = torch.sum(sigmoid((1 - gamma), beta)) / num_voxels_above_threshold
-
-    return gamma_index_batch
-
-def sigmoid(x, beta):
-    return 1 / (1 + torch.exp(-beta * x))
 
 # Correcting the indexing error and implementing the cubic interpolation for 2D y array
 def torch_cubic_interp1d_2d(x, y, x_new):
@@ -470,17 +377,12 @@ def torch_cubic_interp1d_2d(x, y, x_new):
 
 # Plotting results
 
-def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_input=1,
-                mean_output=0, std_output=1, z_slice = 35,
+def plot_slices(trained_model, loader, device, mean_input=0, std_input=1,
+                mean_output=0, std_output=1, y_slice = 30,
                 save_plot_dir = "images/sample.png", patches=False, patch_size=56):
         
-    input, output, target, beam_energy = get_input_output_target(trained_model, loader, device, patches, patch_size)
-    if CT_flag:
-        CT = input[:, 1, :, :, :]  # CT is the second channel
-        # CT = 65.3300 + CT * 170.0528  ###
-        # CT = (CT + 1000) / 2655
-    input = input[:, 0, :, :, :]  # Plot the activity only
-    
+    input, output, target = get_input_output_target(trained_model, loader, device, patches, patch_size)
+
     sns.set()
     n_plots = 3
     fig, axs = plt.subplots(n_plots, 4, figsize=[13, 8])
@@ -496,33 +398,11 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
         ax.set_title(col, fontsize=font_size)
 
     for idx in range(n_plots):
-        input_img = input_scaled[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-        out_img = output_scaled[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-        target_img = target_scaled[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-        if CT_flag:
-            # mask = np.where(target_img > 0.1 * torch.max(target_img), 0.8, 0.0)  # Masking 0 values to be able to see the CT ###
-            mask_input = ((input_img - torch.min(input_img)) / (torch.max(input_img) - torch.min(input_img))).numpy() * 1.4
-            mask_target = ((target_img - torch.min(target_img)) / (torch.max(target_img) - torch.min(target_img))).numpy() * 1.4
-            mask_input[mask_input > 1.0] = 1.0
-            mask_target[mask_target > 1.0] = 1.0
-            
-            CT_idx = CT[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-
-            vmin = -1
-            vmax = 2.5
-            axs[idx, 0].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-            axs[idx, 1].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-            axs[idx, 2].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-            axs[idx, 3].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-        else:    
-            mask_input = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
-            mask_target = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
-            
-        mask_input = np.flipud(mask_input).T
-        mask_target = np.flipud(mask_target).T
-        
+        input_img = input_scaled[idx].cpu().detach().squeeze(0)[:,y_slice,:]
+        out_img = output_scaled[idx].cpu().detach().squeeze(0)[:,y_slice,:]
+        target_img = target_scaled[idx].cpu().detach().squeeze(0)[:,y_slice,:]
         diff_img = abs(target_img - out_img)
-        c1 = axs[idx, 0].imshow(np.flipud(input_img).T, cmap='jet', aspect='auto', alpha=mask_input)
+        c1 = axs[idx, 0].imshow(np.flipud(input_img).T, cmap='jet', aspect='auto')
         axs[idx, 0].set_xticks([])
         axs[idx, 0].set_yticks([])
         if idx == 0:
@@ -530,24 +410,23 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
             axs[idx, 0].plot([40, 140], [10, 10], linewidth=8, color='white', label='1 cm')
             axs[idx, 0].text(75, 19, '10 cm', color='white', fontsize=font_size)
 
-        c2 = axs[idx, 1].imshow(np.flipud(target_img).T, cmap='jet', aspect='auto', alpha=mask_target)
+        c2 = axs[idx, 1].imshow(np.flipud(target_img).T, cmap='jet', aspect='auto')
         axs[idx, 1].set_xticks([])
         axs[idx, 1].set_yticks([])
-        axs[idx, 2].imshow(np.flipud(out_img).T, cmap='jet', vmax=torch.max(target_img), aspect='auto', alpha=mask_target)
+        axs[idx, 2].imshow(np.flipud(out_img).T, cmap='jet', vmax=torch.max(target_img), aspect='auto')
         axs[idx, 2].set_xticks([])
         axs[idx, 2].set_yticks([])
-        axs[idx, 3].imshow(np.flipud(diff_img).T, cmap='jet', vmax=torch.max(target_img), aspect='auto', alpha=mask_target)
+        axs[idx, 3].imshow(np.flipud(diff_img).T, cmap='jet', vmax=torch.max(target_img), aspect='auto')
         axs[idx, 3].set_xticks([])
         axs[idx, 3].set_yticks([])
 
-    if isinstance(beam_energy[0].item(), float):
-        energy_beam_1 = beam_energy[0]
-        energy_beam_2 = beam_energy[1]
-        energy_beam_3 = beam_energy[2]
+    energy_beam_1 = 144
+    energy_beam_2 = 167
+    energy_beam_3 = 137
 
-        fig.text(0.0, 0.81, f'{energy_beam_1:.1f} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
-        fig.text(0.0, 0.51, f'{energy_beam_2:.1f} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
-        fig.text(0.0, 0.2, f'{energy_beam_3:.1f} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
+    fig.text(0.0, 0.81, f'{energy_beam_1} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
+    fig.text(0.0, 0.51, f'{energy_beam_2} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
+    fig.text(0.0, 0.2, f'{energy_beam_3} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
 
     cbar_ax1 = fig.add_axes([0.029, 0.01, 0.22, 0.03])
     cbar_ax2 = fig.add_axes([0.28, 0.01, 0.7, 0.03])
@@ -570,7 +449,7 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
 # Plotting dose-depth profile
 def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
              save_plot_dir = "images/ddp.png", patches=False, patch_size=56):
-    _, output, target, _ = get_input_output_target(trained_model, loader, device, patches, patch_size)
+    _, output, target = get_input_output_target(trained_model, loader, device, patches, patch_size)
     sns.set()
     n_plots = 3
     fig, axs = plt.subplots(n_plots, 1, figsize=[n_plots * 4, 12])
@@ -582,8 +461,8 @@ def plot_ddp(trained_model, loader, device, mean_output=0, std_output=1,
     axs[0].set_title("Dose profile", fontsize=font_size)
 
     for idx in range(n_plots):
-        out_img = output_scaled[idx].cpu().detach().squeeze(0).squeeze(0).numpy()
-        target_img = target_scaled[idx].cpu().detach().squeeze(0).squeeze(0).numpy()
+        out_img = output_scaled[idx].cpu().detach().squeeze(0).numpy()
+        target_img = target_scaled[idx].cpu().detach().squeeze(0).numpy()
         out_profile = np.sum(out_img, axis=(1,2))
         target_profile = np.sum(target_img, axis=(1,2))
         distance = np.flip(np.arange(len(out_profile)))
@@ -603,7 +482,7 @@ def get_input_output_target(trained_model, loader, device, patches, patch_size):
 
     # Loading a few examples
     iter_loader = iter(loader)
-    input, target, beam_energy = next(iter_loader)
+    input, target = next(iter_loader)
     trained_model.eval()  # Putting the model in validation mode
     if patches:
         input, output, target = apply_model_to_patches(trained_model, input, target, patch_size)
@@ -615,7 +494,7 @@ def get_input_output_target(trained_model, loader, device, patches, patch_size):
     
     while input.shape[0] < 3:
         # If the batch size is 1 or 2, load more examples
-        input_i, target_i, beam_energy_i = next(iter_loader)
+        input_i, target_i = next(iter_loader)
         if patches:
             input_i, output_i, target_i = apply_model_to_patches(trained_model, input, target, patch_size)
         else:
@@ -627,9 +506,8 @@ def get_input_output_target(trained_model, loader, device, patches, patch_size):
         input = torch.cat((input, input_i))
         output = torch.cat((output, output_i))
         target = torch.cat((target, target_i))
-        beam_energy = torch.cat((beam_energy, beam_energy_i))
 
-    return input, output, target, beam_energy
+    return input, output, target
 
 def apply_model_to_patches(trained_model, input, target, patch_size):
     # Initialize an empty tensor to hold the reconstructed image
@@ -679,7 +557,7 @@ def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reco
 
     # Loading a few examples
     iter_loader = iter(act2dose_loader)
-    act, dose, _ = next(iter_loader)
+    act, dose = next(iter_loader)
     dose_original = dose.detach().cpu()
     act_original = act.detach().cpu()
     torch.cuda.empty_cache()  # Freeing up RAM 
@@ -705,7 +583,7 @@ def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reco
     
     while dose.shape[0] < 3:
         # If the batch size is 1 or 2, load more examples
-        act_i, dose_i, _ = next(iter_loader)
+        act_i, dose_i = next(iter_loader)
         dose_i_original = dose.detach().cpu()
         act_i_original = act.detach().cpu()
         torch.cuda.empty_cache()  # Freeing up RAM 
@@ -752,8 +630,8 @@ def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reco
     axs[0, 1].set_title(title_reconstructed, fontsize=font_size)
     axs[0, 2].set_title("|Reconstructed - Original|", fontsize=font_size)
     for idx in range(n_plots):
-        original_img = original_imgs[idx].squeeze(0).squeeze(0)[:,y_slice,:]
-        reconstructed_img = reconstruced_imgs[idx].squeeze(0).squeeze(0)[:,y_slice,:]
+        original_img = original_imgs[idx].squeeze(0)[:,y_slice,:]
+        reconstructed_img = reconstruced_imgs[idx].squeeze(0)[:,y_slice,:]
         diff_img = abs(reconstructed_img - original_img)
         c1 = axs[idx, 0].imshow(np.flipud(original_img).T, cmap='jet', aspect='auto')
         axs[idx, 0].set_xticks([])

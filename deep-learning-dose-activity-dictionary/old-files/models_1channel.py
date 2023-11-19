@@ -118,6 +118,8 @@ class R2AttUNet(nn.Module):
         self.Conv_1x1 = nn.Conv3d(32, ch_output, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
+        x = x.unsqueeze(1)
+        
         # Encoding path
         x1 = self.RRCNN1(x)
 
@@ -156,7 +158,7 @@ class R2AttUNet(nn.Module):
 
         d1 = self.Conv_1x1(d2)
 
-        return d1
+        return d1.squeeze(1)
 
 
 class UNet(nn.Module):
@@ -192,7 +194,8 @@ class UNet(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
-        
+        x = x.unsqueeze(1)
+
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
         x_pool1 = self.pool(x_e12)
@@ -216,7 +219,7 @@ class UNet(nn.Module):
 
         x_out = self.output(x_d22)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 class UNetV2(nn.Module):
@@ -253,7 +256,8 @@ class UNetV2(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
-        
+        x = x.unsqueeze(1)
+
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
         x_pool1 = self.pool(x_e12)
@@ -277,7 +281,7 @@ class UNetV2(nn.Module):
 
         x_out = self.output(x_d22)
 
-        return x_out
+        return x_out.squeeze(1)
 
 class UNetV3(nn.Module):
     def __init__(self):
@@ -321,6 +325,7 @@ class UNetV3(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
+        x = x.unsqueeze(1)
 
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
@@ -354,7 +359,7 @@ class UNetV3(nn.Module):
 
         x_out = self.output(x_d32)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 class UNetV4(nn.Module):
@@ -399,7 +404,8 @@ class UNetV4(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
-        
+        x = x.unsqueeze(1)
+
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
         x_pool1 = self.pool(x_e12)
@@ -432,7 +438,7 @@ class UNetV4(nn.Module):
 
         x_out = self.output(x_d32)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 class UNetV5(nn.Module):
@@ -476,7 +482,8 @@ class UNetV5(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
-        
+        x = x.unsqueeze(1)
+
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
         x_pool1 = self.pool(x_e12)
@@ -509,7 +516,7 @@ class UNetV5(nn.Module):
 
         x_out = self.output(x_d32)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 class UNetV6(nn.Module):
@@ -560,6 +567,7 @@ class UNetV6(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
+        x = x.unsqueeze(1)
 
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
@@ -602,7 +610,7 @@ class UNetV6(nn.Module):
 
         x_out = self.output(x_d42)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 class UNetV7(nn.Module):
@@ -653,6 +661,7 @@ class UNetV7(nn.Module):
         self.output = nn.Conv3d(32, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
+        x = x.unsqueeze(1)
 
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
@@ -695,7 +704,7 @@ class UNetV7(nn.Module):
 
         x_out = self.output(x_d42)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 class UNetV9(nn.Module):
@@ -764,7 +773,8 @@ class UNetV9(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
-        
+        x = x.unsqueeze(1)
+
         x_e11 = self.activation(self.e_bn11(self.e11(x)))
         x_e12 = self.activation(self.e_bn12(self.e12(x_e11)))
         x_pool1 = self.pool(x_e12)
@@ -806,7 +816,7 @@ class UNetV9(nn.Module):
 
         x_out = self.output(x_d42)
 
-        return x_out
+        return x_out.squeeze(1)
 
 
 
@@ -852,6 +862,7 @@ class UNetV13(nn.Module):
         self.output = nn.Conv3d(16, 1, kernel_size=3, padding=1)
 
     def forward(self, x):
+        x = x.unsqueeze(1)
 
         x_e11 = self.activation(self.e11(x))
         x_e12 = self.activation(self.e12(x_e11))
@@ -885,4 +896,4 @@ class UNetV13(nn.Module):
 
         x_out = self.output(x_d32)
 
-        return x_out
+        return x_out.squeeze(1)

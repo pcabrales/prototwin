@@ -381,7 +381,7 @@ class TransformerBTS(nn.Module):
         raise NotImplementedError("Should be implemented in child class!!")
 
     def forward(self, x, auxillary_output_layers=[1, 2, 3, 4]):
-        x = x
+        x = x.unsqueeze(1)
 
         x1_1, x2_1, x3_1, encoder_output, intmd_encoder_outputs = self.encode(x)
 
@@ -396,9 +396,9 @@ class TransformerBTS(nn.Module):
                 _key = 'Z' + str(i)
                 auxillary_outputs[_key] = intmd_encoder_outputs[val]
 
-            return decoder_output
+            return decoder_output.squeeze(1)
 
-        return decoder_output
+        return decoder_output.squeeze(1)
 
     def _get_padding(self, padding_type, kernel_size):
         assert padding_type in ['SAME', 'VALID']

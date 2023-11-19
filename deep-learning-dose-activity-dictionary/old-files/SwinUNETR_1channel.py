@@ -313,6 +313,7 @@ class SwinUNETR(nn.Module):
 
 
     def forward(self, x_in):
+        x_in = x_in.unsqueeze(1)###
         if not torch.jit.is_scripting():
             self._check_input_size(x_in.shape[2:])
         hidden_states_out = self.swinViT(x_in, self.normalize)
@@ -327,7 +328,7 @@ class SwinUNETR(nn.Module):
         dec0 = self.decoder2(dec1, enc1)
         out = self.decoder1(dec0, enc0)
         logits = self.out(out)
-        return logits
+        return logits.squeeze(1)###
 
 
 
