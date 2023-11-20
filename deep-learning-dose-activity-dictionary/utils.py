@@ -413,8 +413,9 @@ def gamma_index(output, target, tolerance=0.03, beta=5, mean_output=0, std_outpu
     gamma = torch.amin(diff, dim=0) / tolerance  # minimum among all neighbours, as in the gamma index function
     
     gamma_index_batch = torch.sum(sigmoid((1 - gamma), beta)) / num_voxels_above_threshold
-
+    
     return gamma_index_batch
+
 
 def sigmoid(x, beta):
     return 1 / (1 + torch.exp(-beta * x))
