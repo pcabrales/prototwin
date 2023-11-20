@@ -16,7 +16,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
     l2_loss = nn.MSELoss()
     beta = 2e-2
     threshold = 0.2
-    alpha = 1 / 1000  # ratio between the losses
+    alpha = 1000 / 1000  # ratio between the losses
     for epoch in range(epochs):
         logs = {}
         train_loss = 0.0
@@ -40,38 +40,13 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
             with open(timing_dir, "w") as file:
                 file.write(f'epoch {epoch} batch {batch}\n')
                 
-            ###
-            if epoch == 3:
-                import pymedphys
-                import numpy as np
-                output = batch_output[0].unsqueeze(0)
-                target = batch_target[0].unsqueeze(0)
-                # manual
-                gamma_manual = gamma_index(output, target, beta=10, mean_output=mean_output, std_output=std_output, threshold=threshold)
-                #pymedphys
-                output = mean_output + output * std_output  # undoing normalization
-                target = mean_output + target * std_output
-                axes_reference = (np.arange(output.shape[2]), np.arange(output.shape[3]), np.arange(output.shape[4]))    
-                gamma = pymedphys.gamma(
-                    axes_reference, target.squeeze(0).squeeze(0).cpu().detach().numpy(), 
-                    axes_reference, output.squeeze(0).squeeze(0).cpu().detach().numpy(),
-                    dose_percent_threshold = 3,
-                    distance_mm_threshold = 1, 
-                    lower_percent_dose_cutoff=threshold*100)
-                valid_gamma = gamma[~np.isnan(gamma)]
-
-                pass_ratio = np.sum(valid_gamma <= 1) / len(valid_gamma)
-                print("manual ", gamma_manual.item())
-                print("pymedphys ", pass_ratio) 
-            ###
-                
         # Validation loop
         with torch.no_grad():
             for batch_input, batch_target, _ in tqdm(val_loader):
                 batch_input = batch_input.to(device)
                 batch_target = batch_target.to(device)
                 batch_output = model(batch_input)
-                loss = 1000 * l2_loss(batch_output, batch_target) + (1 - gamma_index(batch_output, batch_target, beta=beta, mean_output=mean_output, std_output=std_output, threshold=threshold))
+                loss = (1-alpha) * l2_loss(batch_output, batch_target) + alpha * (1 - gamma_index(batch_output, batch_target, beta=beta, mean_output=mean_output, std_output=std_output, threshold=threshold))
                 val_loss += loss.item()
 
         # Calculate average losses (to make it independent of batch size)

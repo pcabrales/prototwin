@@ -19,8 +19,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device) ###
-print(torch.cuda.get_device_name(torch.cuda.current_device()))###
+print(device, " : ", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 # Creating the dataset
 input_dir = "data/dataset_1/input"
