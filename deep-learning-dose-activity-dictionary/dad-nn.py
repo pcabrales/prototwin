@@ -26,14 +26,6 @@ input_dir = "data/dataset_1/input"
 output_dir = "data/dataset_1/output"
 dataset_dir = "data/dataset_1"
 
-###
-
-# a = torch.randint(10, (4,4))
-# print(a.repeat(4, 1))
-# stop
-
-###
-
 # Statistics of the dataset (previously found for the entire Prostate dataset)
 mean_input = 0.002942
 std_input = 0.036942

@@ -270,13 +270,6 @@ def RE_loss(output, target, mean_output=0, std_output=1):  # Relative error loss
     loss = abs_diff / max_intensity.view(-1, 1, 1, 1) * 100  # Loss is a tensor in which each pixel contains the relative error
     return loss
 
-# MSE loss
-def mse_loss(output, target, mean_output=0, std_output=1):  # Relative error loss
-    output = mean_output + output * std_output  # undoing normalization
-    target = mean_output + target * std_output
-    loss = torch.sum((output - target)**2)
-    return loss
-
 def manual_permute(tensor, dims):
     for i in range(len(dims)):
         if i != dims[i]:
