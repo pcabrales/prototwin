@@ -578,7 +578,7 @@ def plot_slices(trained_model, loader, device, CT_flag=False, CT_manual=None, me
     fig.tight_layout()
     fig.subplots_adjust(bottom=0.06, left=0.022)
 
-    fig.savefig(save_plot_dir, dpi=300, bbox_inches='tight')
+    fig.savefig(save_plot_dir, dpi=600, bbox_inches='tight')
 
 
 # Plotting dose-depth profile
