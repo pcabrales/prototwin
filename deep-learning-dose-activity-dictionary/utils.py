@@ -63,8 +63,8 @@ class DoseActivityDataset(Dataset):
         if self.energy_beam_dict is not None:
             beam_number = self.file_names[idx][0:4]
             beam_energy = self.energy_beam_dict.get(beam_number, 0.0)
-            if (beam_energy == 0.0):
-                print(beam_number)
+            # if (beam_energy == 0.0):
+            #     print(beam_number)
             beam_energy = float(beam_energy) / 1000  # from keV to MeV
         else: 
             beam_energy = "N/A"
@@ -387,7 +387,7 @@ def gamma_index(output, target, tolerance=0.03, beta=5, mean_output=0, std_outpu
 
     max_target = torch.amax(target, dim=(1, 2, 3)) # Overall max for each image in the batch
     target = target / max_target.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # normalising to the maximum dose so that we can later directly apply the threshold
-    output = output / max_target.unsqueeze(-1).unsqueeze(-1)
+    output = output / max_target.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     
     # Define Unfold layer
     unfold = unfoldNd.UnfoldNd(kernel_size=3, stride=1, padding=1)

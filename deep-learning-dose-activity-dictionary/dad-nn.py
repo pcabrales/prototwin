@@ -48,12 +48,12 @@ with open(os.path.join(dataset_dir, 'energy_beam_dict.json'), 'r') as file:
 
 # Reshape of the images
 # img_size = (128, 64, 64)
-img_size = (160, 64, 64) ###
+img_size = (160, 64, 64)
 
 # Loading the CT
 from scipy.ndimage import zoom
 CT = np.load ('data/dataset_1/CT.npy')
-# CT = np.flip(CT, axis=0)  # Flipping dim=0 because we have to¿? Not sure
+# CT = np.flip(CT, axis=0)  # Flipping dim=0 because we have to? Not sure
 CT = zoom(CT, (img_size[0] / CT.shape[0], img_size[1] / CT.shape[1], img_size[2] / CT.shape[2]))
 CT = (CT - mean_CT) / std_CT  # Normalise
 CT_flag = False
@@ -90,7 +90,7 @@ test_size = len(dataset) - train_size - val_size
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
 
 # Create DataLoaders for training
-batch_size = 1
+batch_size = 4###1
 num_workers = 4
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -103,7 +103,7 @@ model = SwinUNETR(img_size=img_size, in_channels=in_channels, out_channels=1).to
 
 model_dir = 'models/trained-models/SwinUNETR-v13.pth'
 timing_dir = 'models/training-times/training-time-SwinUNETR-v13.txt'
-n_epochs = 5###30
+n_epochs = 100###30
 save_plot_dir = "images/SwinUNETR-v13-loss.png"
 trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
