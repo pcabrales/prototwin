@@ -471,25 +471,30 @@ def torch_cubic_interp1d_2d(x, y, x_new):
 
 # Plotting results
 
-def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_input=1,
-                mean_output=0, std_output=1, z_slice = 35,
+def plot_slices(trained_model, loader, device, CT_flag=False, CT_manual=None, mean_input=0, std_input=1,
+                mean_output=0, std_output=1, z_slice = None,
                 save_plot_dir = "images/sample.png", patches=False, patch_size=56):
         
     input, output, target, beam_energy = get_input_output_target(trained_model, loader, device, patches, patch_size)
-    if CT_flag:
+    n_plots = 3
+    
+    if CT_flag:  # This is if the network was trained with the CT as a second channel
         CT = input[:, 1, :, :, :]  # CT is the second channel
-        # CT = 65.3300 + CT * 170.0528  ###
-        # CT = (CT + 1000) / 2655
+    elif CT_manual is not None:  # Alternatively, the user can manually pass the CT as input 
+        CT = torch.stack([torch.tensor(CT_manual)] * n_plots)    
+        CT_flag = True
+    
     input = input[:, 0, :, :, :]  # Plot the activity only
     
     sns.set()
-    n_plots = 3
     fig, axs = plt.subplots(n_plots, 4, figsize=[13, 8])
 
     input_scaled = mean_input + input * std_input
     output_scaled = mean_output + output * std_output  # undoing normalization
     target_scaled = mean_output + target * std_output
     font_size = 15
+    max_target = torch.max(target_scaled)
+    max_input = torch.max(input_scaled)
 
     # Add titles to the columns
     column_titles = ['Input (Activation)', 'Target (Reference dose)', 'Output (Calculated dose)', 'Error = |Output - Target|']
@@ -497,9 +502,19 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
         ax.set_title(col, fontsize=font_size)
 
     for idx in range(n_plots):
-        input_img = input_scaled[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-        out_img = output_scaled[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-        target_img = target_scaled[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
+        input_img = input_scaled[idx].cpu().detach().squeeze(0).squeeze(0)
+        out_img = output_scaled[idx].cpu().detach().squeeze(0).squeeze(0)
+        target_img = target_scaled[idx].cpu().detach().squeeze(0).squeeze(0)
+        if z_slice is None:
+            idcs_max_target = torch.where(target_img == torch.max(target_img))
+            z_slice_idx = idcs_max_target[-1].item()  # Plotting the slice where the value of the dose is maximum
+        else:
+            z_slice_idx = z_slice  # if we specify a z slice we use it
+            
+        input_img = input_img[:,:,z_slice_idx]
+        out_img = out_img[:,:,z_slice_idx]
+        target_img = target_img[:,:,z_slice_idx]
+        
         if CT_flag:
             # mask = np.where(target_img > 0.1 * torch.max(target_img), 0.8, 0.0)  # Masking 0 values to be able to see the CT ###
             mask_input = ((input_img - torch.min(input_img)) / (torch.max(input_img) - torch.min(input_img))).numpy() * 1.4
@@ -507,14 +522,12 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
             mask_input[mask_input > 1.0] = 1.0
             mask_target[mask_target > 1.0] = 1.0
             
-            CT_idx = CT[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice]
-
+            CT_idx = CT[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice_idx]
             vmin = -1
             vmax = 2.5
-            axs[idx, 0].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-            axs[idx, 1].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-            axs[idx, 2].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
-            axs[idx, 3].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
+            for plot_column in range(4):
+                axs[idx, plot_column].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
+            
         else:    
             mask_input = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
             mask_target = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
@@ -523,7 +536,7 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
         mask_target = np.flipud(mask_target).T
         
         diff_img = abs(target_img - out_img)
-        c1 = axs[idx, 0].imshow(np.flipud(input_img).T, cmap='jet', aspect='auto', alpha=mask_input)
+        c1 = axs[idx, 0].imshow(np.flipud(input_img).T, vmax=max_input, cmap='jet', aspect='auto', alpha=mask_input)
         axs[idx, 0].set_xticks([])
         axs[idx, 0].set_yticks([])
         if idx == 0:
@@ -531,13 +544,13 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
             axs[idx, 0].plot([40, 140], [10, 10], linewidth=8, color='white', label='1 cm')
             axs[idx, 0].text(75, 19, '10 cm', color='white', fontsize=font_size)
 
-        c2 = axs[idx, 1].imshow(np.flipud(target_img).T, cmap='jet', aspect='auto', alpha=mask_target)
+        c2 = axs[idx, 1].imshow(np.flipud(target_img).T, vmax=max_target, cmap='jet', aspect='auto', alpha=mask_target)
         axs[idx, 1].set_xticks([])
         axs[idx, 1].set_yticks([])
-        axs[idx, 2].imshow(np.flipud(out_img).T, cmap='jet', vmax=torch.max(target_img), aspect='auto', alpha=mask_target)
+        axs[idx, 2].imshow(np.flipud(out_img).T, cmap='jet', vmax=max_target, aspect='auto', alpha=mask_target)
         axs[idx, 2].set_xticks([])
         axs[idx, 2].set_yticks([])
-        axs[idx, 3].imshow(np.flipud(diff_img).T, cmap='jet', vmax=torch.max(target_img), aspect='auto', alpha=mask_target)
+        axs[idx, 3].imshow(np.flipud(diff_img).T, cmap='jet', vmax=max_target, aspect='auto', alpha=mask_target)
         axs[idx, 3].set_xticks([])
         axs[idx, 3].set_yticks([])
 
@@ -551,13 +564,13 @@ def plot_slices(trained_model, loader, device, CT_flag=False, mean_input=0, std_
         fig.text(0.0, 0.2, f'{energy_beam_3:.1f} MeV Beam', va='center', rotation='vertical', fontsize=font_size, fontstyle='italic')
 
     cbar_ax1 = fig.add_axes([0.029, 0.01, 0.22, 0.03])
-    cbar_ax2 = fig.add_axes([0.28, 0.01, 0.7, 0.03])
+    cbar_ax2 = fig.add_axes([0.3, 0.01, 0.66, 0.03])
 
     cbar1 = fig.colorbar(c1, cax=cbar_ax1, orientation='horizontal')
     cbar1.set_label(label=r'$\beta^+$ Decay Count $\ / \ mm^3$', size=font_size)
     cbar1.ax.tick_params(labelsize=font_size)
 
-    cbar2 = fig.colorbar(c2, cax=cbar_ax2, orientation='horizontal')
+    cbar2 = fig.colorbar(c2, cax=cbar_ax2, orientation='horizontal', format='%.1e')
     cbar2.set_label(label='Dose ($Gy$)', size=font_size)
     cbar2.ax.xaxis.get_offset_text().set(size=font_size)
     cbar2.ax.tick_params(labelsize=font_size)

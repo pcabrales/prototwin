@@ -26,6 +26,14 @@ input_dir = "data/dataset_1/input"
 output_dir = "data/dataset_1/output"
 dataset_dir = "data/dataset_1"
 
+###
+
+# a = torch.randint(10, (4,4))
+# print(a.repeat(4, 1))
+# stop
+
+###
+
 # Statistics of the dataset (previously found for the entire Prostate dataset)
 mean_input = 0.002942
 std_input = 0.036942
@@ -90,7 +98,7 @@ test_size = len(dataset) - train_size - val_size
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
 
 # Create DataLoaders for training
-batch_size = 4###1
+batch_size = 1
 num_workers = 4
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -103,10 +111,10 @@ model = SwinUNETR(img_size=img_size, in_channels=in_channels, out_channels=1).to
 
 model_dir = 'models/trained-models/SwinUNETR-v13.pth'
 timing_dir = 'models/training-times/training-time-SwinUNETR-v13.txt'
-n_epochs = 100###30
+n_epochs = 5###30
 save_plot_dir = "images/SwinUNETR-v13-loss.png"
-trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
-                      model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
+# trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
+#                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir)
 
 # Loading the trained model
 model_dir = "models/trained-models/SwinUNETR-v13.pth"
@@ -137,9 +145,9 @@ plot_loader = test_loader
 
 # Plotting slices of the dose
 save_plot_dir = "images/SwinUNETR-v13-sample.png"
-plot_slices(trained_model, plot_loader, device, CT_flag=CT_flag, mean_input=mean_input, std_input=std_input,
-            mean_output=mean_output, std_output=std_output,
-            save_plot_dir=save_plot_dir, z_slice=img_size[2]//2, patches=patches, patch_size=img_size[2]//2) 
+plot_slices(trained_model, plot_loader, device, CT_flag=CT_flag, CT_manual=CT, 
+            mean_input=mean_input, std_input=std_input, mean_output=mean_output, std_output=std_output,
+            save_plot_dir=save_plot_dir, patches=patches) 
  
 # Plotting the dose-depth profiles
 save_plot_dir = "images/SwinUNETR-v13-ddp.png"

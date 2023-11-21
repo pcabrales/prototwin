@@ -16,7 +16,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
     l2_loss = nn.MSELoss()
     beta = 2e-2
     threshold = 0.2
-    alpha = 0 / 1000  # ratio between the losses
+    alpha = 1000 / 1000  # ratio between the losses
     for epoch in range(epochs):
         logs = {}
         train_loss = 0.0
