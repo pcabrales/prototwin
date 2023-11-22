@@ -9,6 +9,7 @@ from scipy.interpolate import interp1d
 import unfoldNd
 import seaborn as sns 
 import matplotlib.pyplot as plt
+import pymedphys
 
 def set_seed(seed):
     """
@@ -263,6 +264,8 @@ class GaussianBlob:
 # CUSTOM LOSSES
 # Relative error
 def RE_loss(output, target, mean_output=0, std_output=1):  # Relative error loss
+    output = output.squeeze(1)  # Eliminate channel dim
+    target = target.squeeze(1)
     output = mean_output + output * std_output  # undoing normalization
     target = mean_output + target * std_output
     abs_diff = output - target
@@ -366,7 +369,21 @@ def range_loss(output, target, range_val=0.9, device="cpu", mean_output=0, std_o
 
     # plt.plot(depth_at_range[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
     # plt.plot(depth_at_range_output[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
-    return depth_at_range_output - depth_at_range
+    return depth_at_range - depth_at_range_output
+
+
+def plot_range_histogram(range_list, save_plot_dir="images/hist_BP_deviation.png"):
+    plt.figure(figsize=(8,6))
+    bins = 10
+    plt.hist(range_list.flatten(), bins=bins, color='blue', alpha=0.5, label='No Reconstruction')
+
+    plt.title('Deviation - Bragg Peak (BP)')
+    plt.xlabel('Reference BP - Reconstructed BP (mm)')
+    plt.ylabel('Frequency')
+
+    plt.legend()
+    plt.savefig(save_plot_dir, dpi=500)
+    return None
 
 
 # Range deviation
@@ -412,6 +429,25 @@ def gamma_index(output, target, tolerance=0.03, beta=5, mean_output=0, std_outpu
 
 def sigmoid(x, beta):
     return 1 / (1 + torch.exp(-beta * x))
+
+def pymed_gamma(gamma_pymed_list, batch_output, batch_target, dose_percent_threshold, distance_mm_threshold, threshold, mean_output=0, std_output=1):
+# for pymed gamma calculation:
+    for idx in range(batch_target.shape[0]):
+        output = batch_output[idx].unsqueeze(0)
+        target = batch_target[idx].unsqueeze(0)
+        output = mean_output + output * std_output  # undoing normalization
+        target = mean_output + target * std_output
+        axes_reference = (np.arange(output.shape[2]), np.arange(output.shape[3]), np.arange(output.shape[4]))    
+        gamma = pymedphys.gamma(
+            axes_reference, target.squeeze(0).squeeze(0).cpu().detach().numpy(), 
+            axes_reference, output.squeeze(0).squeeze(0).cpu().detach().numpy(),
+            dose_percent_threshold = dose_percent_threshold,
+            distance_mm_threshold = distance_mm_threshold, 
+            lower_percent_dose_cutoff=threshold*100)
+        valid_gamma = gamma[~np.isnan(gamma)]
+        pass_ratio = np.sum(valid_gamma <= 1) / len(valid_gamma)
+        gamma_pymed_list.append(pass_ratio)
+    return gamma_pymed_list
 
 # Correcting the indexing error and implementing the cubic interpolation for 2D y array
 def torch_cubic_interp1d_2d(x, y, x_new):
@@ -473,9 +509,13 @@ def plot_slices(trained_model, loader, device, CT_flag=False, CT_manual=None, me
     
     if CT_flag:  # This is if the network was trained with the CT as a second channel
         CT = input[:, 1, :, :, :]  # CT is the second channel
+        vmin_CT = -1
+        vmax_CT = 2.5
     elif CT_manual is not None:  # Alternatively, the user can manually pass the CT as input 
         CT = torch.stack([torch.tensor(CT_manual)] * n_plots)    
         CT_flag = True
+        vmin_CT = -125
+        vmax_CT = 225
     
     input = input[:, 0, :, :, :]  # Plot the activity only
     
@@ -486,8 +526,8 @@ def plot_slices(trained_model, loader, device, CT_flag=False, CT_manual=None, me
     output_scaled = mean_output + output * std_output  # undoing normalization
     target_scaled = mean_output + target * std_output
     font_size = 15
-    max_target = torch.max(target_scaled)
-    max_input = torch.max(input_scaled)
+    max_target = torch.max(target_scaled[0:n_plots])
+    max_input = torch.max(input_scaled[0:n_plots])
 
     # Add titles to the columns
     column_titles = ['Input (Activation)', 'Target (Reference dose)', 'Output (Calculated dose)', 'Error = |Output - Target|']
@@ -516,10 +556,8 @@ def plot_slices(trained_model, loader, device, CT_flag=False, CT_manual=None, me
             mask_target[mask_target > 1.0] = 1.0
             
             CT_idx = CT[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice_idx]
-            vmin = -1
-            vmax = 2.5
             for plot_column in range(4):
-                axs[idx, plot_column].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin, vmax=vmax)
+                axs[idx, plot_column].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin_CT, vmax=vmax_CT)
             
         else:    
             mask_input = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
