@@ -123,8 +123,8 @@ timing_dir = 'models/training-times/training-time-SwinUNETR-v14.txt'
 losses_dir = 'models/losses/SwinUNETR-v14-loss.csv'
 n_epochs = 50
 save_plot_dir = "images/SwinUNETR-v14-loss.png"
-# trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
-#                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir, losses_dir=losses_dir)
+trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
+                      model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir, losses_dir=losses_dir)
 
 # Loading the trained model
 model_dir = "models/trained-models/SwinUNETR-v14.pth"
