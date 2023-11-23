@@ -17,7 +17,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
     l2_loss = nn.MSELoss()
     beta = 2e-2
     threshold = 0.2
-    alpha = 0 / 1000  # ratio between the losses
+    alpha = 100 / 1000  # ratio between the losses
     training_losses = []
     val_losses = [] 
     for epoch in range(epochs):
@@ -32,10 +32,9 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
             batch_target = batch_target.to(device)
             optim.zero_grad()  # resetting gradients
             batch_output = model(batch_input)  # generating images
-            loss = l2_loss(batch_output, batch_target)
             if epoch * batch_target.shape[0] + batch > 150 and beta < 5:
                 beta = beta * 1.03
-            # loss = (1-alpha) * l2_loss(batch_output, batch_target) + alpha * (1 - gamma_index(batch_output, batch_target, beta=beta, mean_output=mean_output, std_output=std_output, threshold=threshold))
+            loss = (1-alpha) * l2_loss(batch_output, batch_target) + alpha * (1 - gamma_index(batch_output, batch_target, beta=beta, mean_output=mean_output, std_output=std_output, threshold=threshold))
             loss.backward()  # backprop
             optim.step()
             train_loss += loss.item()
@@ -49,8 +48,7 @@ def train(model, train_loader, val_loader, epochs=10, model_dir='.', timing_dir 
                 batch_input = batch_input.to(device)
                 batch_target = batch_target.to(device)
                 batch_output = model(batch_input)
-                loss = l2_loss(batch_output, batch_target)
-                # loss = (1-alpha) * l2_loss(batch_output, batch_target) + alpha * (1 - gamma_index(batch_output, batch_target, beta=beta, mean_output=mean_output, std_output=std_output, threshold=threshold))
+                loss = (1-alpha) * l2_loss(batch_output, batch_target) + alpha * (1 - gamma_index(batch_output, batch_target, beta=beta, mean_output=mean_output, std_output=std_output, threshold=threshold))
                 val_loss += loss.item()
 
         # Calculate average losses (to make it independent of batch size)

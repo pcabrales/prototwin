@@ -1,1 +1,1 @@
-epoch 28 batch 116
+Training time: 9358.433322191238 seconds
