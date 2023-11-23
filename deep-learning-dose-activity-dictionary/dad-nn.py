@@ -47,7 +47,6 @@ with open(os.path.join(dataset_dir, 'energy_beam_dict.json'), 'r') as file:
     energy_beam_dict = json.load(file)
 
 # Reshape of the images
-# img_size = (128, 64, 64)
 img_size = (160, 64, 64)
 
 # Loading the CT
@@ -66,16 +65,13 @@ cropped_CT = large_CT[large_CT.shape[0]//2 + TransX - HLX : large_CT.shape[0]//2
                       large_CT.shape[1]//2 + TransY - HLY : large_CT.shape[1]//2 + TransY + HLY,
                       large_CT.shape[2]//2 + TransZ - HLZ : large_CT.shape[2]//2 + TransZ + HLZ]
 
-final_shape = (160, 64, 64)  # reshaping to mm
-CT = zoom(cropped_CT, (final_shape[0] / cropped_CT.shape[0], final_shape[1] / cropped_CT.shape[1], final_shape[2] / cropped_CT.shape[2]))
+CT = zoom(cropped_CT, (img_size[0] / cropped_CT.shape[0], img_size[1] / cropped_CT.shape[1], img_size[2] / cropped_CT.shape[2]))
 
 # CT = np.flip(CT, axis=0)  # Flipping dim=0 because we have to? Not sure
-# CT = (CT - mean_CT) / std_CT  # Normalise
-CT_flag = False
+CT = (CT - mean_CT) / std_CT  # Normalise
+CT_flag = True
 if CT_flag: in_channels = 2
 else: in_channels = 1
-print(CT.shape)
-
 
 # Transformations
 input_transform = Compose([
@@ -98,7 +94,7 @@ num_samples = 948
 # Create dataset applying the transforms
 dataset = DoseActivityDataset(input_dir=input_dir, output_dir=output_dir,
                               input_transform=input_transform, output_transform=output_transform, joint_transform=joint_transform,
-                              num_samples=num_samples, energy_beam_dict=energy_beam_dict)
+                              CT_flag=CT_flag, CT=CT, num_samples=num_samples, energy_beam_dict=energy_beam_dict)
 
 # Split dataset into 80% training, 15% validation, 5% testing
 train_size = int(0.8 * len(dataset))
@@ -107,7 +103,7 @@ test_size = len(dataset) - train_size - val_size
 train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, val_size, test_size])
 
 # Create DataLoaders for training
-batch_size = 4
+batch_size = 1
 num_workers = 4
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
@@ -116,20 +112,19 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num
 from models.SwinUNETR import SwinUNETR
 # Create the model
 patches = False
-model = SwinUNETR(img_size=img_size, in_channels=in_channels, out_channels=1).to(device)
+model = SwinUNETR(in_channels=2, out_channels=1, img_size=img_size).to(device)
 
-model_dir = 'models/trained-models/SwinUNETR-v14.pth'
-timing_dir = 'models/training-times/training-time-SwinUNETR-v14.txt'
-losses_dir = 'models/losses/SwinUNETR-v14-loss.csv'
+model_dir = 'models/trained-models/SwinUNETR-v16.pth'
+timing_dir = 'models/training-times/training-time-SwinUNETR-v16.txt'
+losses_dir = 'models/losses/SwinUNETR-v16-loss.csv'
 n_epochs = 50
-save_plot_dir = "images/SwinUNETR-v14-loss.png"
-trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
-                      model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir, losses_dir=losses_dir)
+save_plot_dir = "images/SwinUNETR-v16-loss.png"
+# trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
+#                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir, losses_dir=losses_dir)
 
 # Loading the trained model
-model_dir = "models/trained-models/SwinUNETR-v14.pth"
+model_dir = "models/trained-models/SwinUNETR-v16.pth"
 trained_model = torch.load(model_dir, map_location=torch.device(device))
-
 
 ###
 # input_transform = Compose([
@@ -154,18 +149,18 @@ trained_model = torch.load(model_dir, map_location=torch.device(device))
 plot_loader = test_loader
 
 # Plotting slices of the dose
-save_plot_dir = "images/SwinUNETR-v14-sample.png"
+save_plot_dir = "images/SwinUNETR-v16-sample.png"
 plot_slices(trained_model, plot_loader, device, CT_flag=CT_flag, CT_manual=CT, 
             mean_input=mean_input, std_input=std_input, mean_output=mean_output, std_output=std_output,
             save_plot_dir=save_plot_dir, patches=patches) 
  
 # Plotting the dose-depth profiles
-save_plot_dir = "images/SwinUNETR-v14-ddp.png"
+save_plot_dir = "images/SwinUNETR-v16-ddp.png"
 plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
          std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
 
-results_dir = 'models/test-results/SwinUNETR-v14-results.txt'
-save_plot_dir = 'images/SwinUNETR-v14-range-hist.png'
+results_dir = 'models/test-results/SwinUNETR-v16-results.txt'
+save_plot_dir = 'images/SwinUNETR-v16-range-hist.png'
 test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output, save_plot_dir=save_plot_dir)
 
 # dose2act_model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"

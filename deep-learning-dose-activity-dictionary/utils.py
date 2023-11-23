@@ -30,7 +30,7 @@ class DoseActivityDataset(Dataset):
     Create the dataset where the activity is the input and the dose is the output.
     The relevant transforms are applied.
     """
-    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, joint_transform=None, CT=None, energy_beam_dict=None):
+    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, joint_transform=None, CT_flag=False, CT=None, energy_beam_dict=None):
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.input_transform = input_transform
@@ -38,6 +38,7 @@ class DoseActivityDataset(Dataset):
         self.joint_transform = joint_transform
         self.energy_beam_dict = energy_beam_dict
         self.file_names = os.listdir(input_dir)[:num_samples]
+        self.CT_flag = CT_flag
         self.CT = CT
 
     def __len__(self):
@@ -59,7 +60,7 @@ class DoseActivityDataset(Dataset):
             output_volume = self.output_transform(output_volume)
         if self.joint_transform:
             input_volume, output_volume = self.joint_transform(input_volume, output_volume)
-        if self.CT is not None:
+        if self.CT_flag:
             input_volume = torch.cat((input_volume, torch.tensor(self.CT, dtype=torch.float32).unsqueeze(0)))
         if self.energy_beam_dict is not None:
             beam_number = self.file_names[idx][0:4]
