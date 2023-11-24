@@ -330,8 +330,9 @@ def range_loss(output, target, range_val=0.9, device="cpu", mean_output=0, std_o
     target = mean_output + target * std_output
     max_global = torch.amax(target, dim=(1, 2, 3))  # Overall max for each image
     max_along_depth, idx_max_along_depth = torch.max(target, dim=1)  # Max at each transversal point
-    indices_keep = max_along_depth > 0.1 * max_global.unsqueeze(-1).unsqueeze(-1)  # Unsqueeze to match dimensions of the tensors. These are the indices of the transversal Bragg Peaks higher than 1% of the highest peak BP
-    max_along_depth = max_along_depth[indices_keep] # Only keep the max, or bragg peaks, of transversal points with non-null dose
+    
+    indices_keep = max_along_depth > 0.05 * max_global.unsqueeze(-1).unsqueeze(-1)  # Unsqueeze to match dimensions of the tensors. These are the indices of the transversal Bragg Peaks higher than 1% of the highest peak BP
+    max_along_depth = max_along_depth[indices_keep] # Only keep the max, or bragg peaks, of transversal points with non-null dose (above 0.1 of max)
     idx_max_along_depth = idx_max_along_depth[indices_keep]
     # target_permuted = torch.permute(target, (1, 0, 2, 3))
     # output_permuted = torch.permute(output, (1, 0, 2, 3))
@@ -345,38 +346,67 @@ def range_loss(output, target, range_val=0.9, device="cpu", mean_output=0, std_o
     depth = torch.arange(longitudinal_size, dtype=torch.float32).to(device)  # in mm
     depth_extended = torch.linspace(min(depth), max(depth), 10000).to(device)
     
-    # ddp = interp1d(depth, ddp_data, axis=0, kind='cubic')
-    # ddp_output = interp1d(depth, ddp_output_data, axis=0, kind='cubic')
-    # ddp_depth_extended = ddp(depth_extended)
-    # ddp_output_depth_extended = ddp_output(depth_extended)
+    # ddp_depth_extended  = torch_cubic_interp1d_2d(depth, ddp_data, depth_extended)
+    # ddp_output_depth_extended  = torch_cubic_interp1d_2d(depth, ddp_output_data, depth_extended)
     
-    ddp_depth_extended  = torch_cubic_interp1d_2d(depth, ddp_data, depth_extended)
-    ddp_output_depth_extended  = torch_cubic_interp1d_2d(depth, ddp_output_data, depth_extended)
-    max_along_depth = torch.amax(ddp_depth_extended, dim=0)
+    ddp_interp1d = interp1d(depth.numpy(), ddp_data.numpy(), axis=0, kind='cubic')
+    ddp_output_interp1d = interp1d(depth.numpy(), ddp_output_data.numpy(), axis=0, kind='cubic')
+    ddp_depth_extended = ddp_interp1d(depth_extended.numpy())
+    ddp_output_depth_extended = ddp_output_interp1d(depth_extended.numpy())
+    
+
+    # In the loop below, we remove those transversal ddp's that start with high doses (even as high as the bp), as they confuse the range
+    n_col = 0
+    for col in ddp_depth_extended.T:
+        max_col = np.max(col)
+        idcs_above_90_of_max = depth_extended[col > 0.8 * max_col].numpy()
+        # if there are two very separate values (more than 20mm) above 80% of max, it means that the dose is very high at entry
+        if np.max(idcs_above_90_of_max) - np.min(idcs_above_90_of_max) > 20:    
+            ddp_depth_extended = np.delete(ddp_depth_extended, n_col, 1)  # delete those columns
+            ddp_output_depth_extended = np.delete(ddp_output_depth_extended, n_col, 1)
+            continue
+        n_col += 1
+        
+    ddp_depth_extended = torch.from_numpy(ddp_depth_extended)
+    ddp_output_depth_extended = torch.from_numpy(ddp_output_depth_extended)
+    
+    max_along_depth = torch.amax(ddp_depth_extended, dim=0) 
     max_along_output_depth = torch.amax(ddp_output_depth_extended, dim=0)
     dose_at_range = range_val * max_along_depth
     dose_at_range_output = range_val * max_along_output_depth
-    
-    # n_plot = 115
-    # plt.plot(depth_extended, ddp_depth_extended[:, n_plot])
-    # plt.plot(depth_extended, ddp_output_depth_extended[:, n_plot])
 
     # mask = depth_extended[:, np.newaxis] > idx_max_along_depth.numpy()  # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)
-    mask = depth_extended[:, None] > idx_max_along_depth  # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)
-    ddp_depth_extended[mask] = 0
-    ddp_output_depth_extended[mask] = 0
+    # mask = depth_extended[:, None] > idx_max_along_depth  # mask to only consider the range after the bragg peak (indices smaller than the index at the BP)  ### uncomment these three lines
+    # ddp_depth_extended[mask] = 0
+    # ddp_output_depth_extended[mask] = 0
     depth_at_range = depth_extended[torch.argmin(torch.abs(ddp_depth_extended - dose_at_range), dim=0)]
     depth_at_range_output = depth_extended[torch.argmin(torch.abs(ddp_output_depth_extended  - dose_at_range_output), dim=0)]
-
-    # plt.plot(depth_at_range[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
-    # plt.plot(depth_at_range_output[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
+    
+    ### Code to plot the maxima
+    # max_diff, idx_max_diff = torch.max(torch.abs(depth_at_range - depth_at_range_output), 0)
+    # n_plot = idx_max_diff
+    # if range_val == 1.0 and max_diff > 2:
+    #     plt.figure()
+    #     col = ddp_depth_extended[:, n_plot].numpy()
+    #     max_col = np.max(col)
+    #     idcs_above_90_of_max = depth_extended[col > 0.8 * max_col].numpy()
+    #     print(n_plot)
+    #     plt.plot(depth_extended, ddp_depth_extended[:, n_plot], linestyle="-.")
+    #     plt.plot(depth_extended, ddp_output_depth_extended[:, n_plot], linestyle="-.")
+    #     plt.plot(depth_at_range[n_plot], dose_at_range[n_plot], marker=".", markersize=10)
+    #     plt.plot(depth_at_range_output[n_plot], dose_at_range_output[n_plot], marker=".", markersize=20)
+    #     plt.savefig('images/test_plot.png')
+    #     plt.clf()
+    ###
     return depth_at_range - depth_at_range_output
 
 
 def plot_range_histogram(range_list, save_plot_dir="images/hist_BP_deviation.png"):
     plt.figure(figsize=(8,6))
-    bins = 10
-    plt.hist(range_list.flatten(), bins=bins, color='blue', alpha=0.5, label='No Reconstruction')
+    bins = 30
+    range_list = range_list[range_list < 5]
+    range_list = range_list[range_list > -5]
+    plt.hist(range_list.flatten(), bins=bins, color='blue', alpha=0.5)#, label='No Reconstruction')
 
     plt.title('Deviation - Bragg Peak (BP)')
     plt.xlabel('Reference BP - Reconstructed BP (mm)')
@@ -513,7 +543,8 @@ def plot_slices(trained_model, loader, device, CT_flag=False, CT_manual=None, me
         vmin_CT = -1
         vmax_CT = 2.5
     elif CT_manual is not None:  # Alternatively, the user can manually pass the CT as input 
-        CT = torch.stack([torch.tensor(CT_manual)] * n_plots)    
+        print(CT_manual.shape)
+        CT = torch.stack([torch.tensor(np.ascontiguousarray(CT_manual))] * n_plots)    
         CT_flag = True
         vmin_CT = -125
         vmax_CT = 225
