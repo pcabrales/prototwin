@@ -47,7 +47,7 @@ def test(trained_model, test_loader, device, results_dir='.',
     gamma_pymed_list = torch.tensor(gamma_pymed_list)
     
     text_results = f"Relative Error: {torch.mean(torch.abs(RE_loss_list))} +- {torch.std(torch.abs(RE_loss_list))}\n" \
-           f"R100: {torch.abs(torch.mean(R100_list))} +- {torch.abs(torch.std(R100_list))}\n" \
+           f"R100: {torch.mean(torch.abs(R100_list))} +- {torch.std(torch.abs(R100_list))}\n" \
            f"R90: {torch.mean(R90_list)} +- {torch.std(R90_list)}\n" \
            f"R50: {torch.mean(R50_list)} +- {torch.std(R50_list)}\n" \
            f"R10: {torch.mean(R10_list)} +- {torch.std(R10_list)}\n" \
