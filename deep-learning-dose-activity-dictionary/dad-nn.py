@@ -41,6 +41,13 @@ mean_CT = 65.3300
 std_CT = 170.0528
 max_CT = 1655
 min_CT = -1000
+
+###
+mean_output = 0
+std_output = max_output
+mean_input = 0
+std_input = max_input
+###
     
 # Load the dictionary from the JSON file
 with open(os.path.join(dataset_dir, 'energy_beam_dict.json'), 'r') as file:
@@ -68,9 +75,11 @@ cropped_CT = large_CT[large_CT.shape[0]//2 + TransX - HLX : large_CT.shape[0]//2
 CT = zoom(cropped_CT, (img_size[0] / cropped_CT.shape[0], img_size[1] / cropped_CT.shape[1], img_size[2] / cropped_CT.shape[2]))
 
 # CT = np.flip(CT, axis=0)  # Flipping dim=0 because we have to? Not sure
-CT = (CT - mean_CT) / std_CT  # Normalise
+
 CT_flag = True
-if CT_flag: in_channels = 2
+if CT_flag: 
+    in_channels = 2
+    CT = (CT - mean_CT) / std_CT  # Normalise
 else: in_channels = 1
 
 # Transformations
@@ -113,18 +122,18 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num
 from models.SwinUNETR import SwinUNETR
 # Create the model
 patches = False
-model = SwinUNETR(in_channels=2, out_channels=1, img_size=img_size).to(device)
+model = SwinUNETR(in_channels=in_channels, out_channels=1, img_size=img_size).to(device)
 
-model_dir = 'models/trained-models/SwinUNETR-v16.pth'
-timing_dir = 'models/training-times/training-time-SwinUNETR-v16.txt'
-losses_dir = 'models/losses/SwinUNETR-v16-loss.csv'
+model_dir = 'models/trained-models/SwinUNETR-v18.pth'
+timing_dir = 'models/training-times/training-time-SwinUNETR-v18.txt'
+losses_dir = 'models/losses/SwinUNETR-v18-loss.csv'
 n_epochs = 50
-save_plot_dir = "images/SwinUNETR-v16-loss.png"
-# trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
-#                       model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir, losses_dir=losses_dir)
+save_plot_dir = "images/SwinUNETR-v18-loss.png"
+trained_model = train(model, train_loader, val_loader, epochs=n_epochs, mean_output=mean_output, std_output=std_output,
+                      model_dir=model_dir, timing_dir=timing_dir, save_plot_dir=save_plot_dir, losses_dir=losses_dir)
 
 # Loading the trained model
-model_dir = "models/trained-models/SwinUNETR-v16.pth"
+model_dir = "models/trained-models/SwinUNETR-v18.pth"
 trained_model = torch.load(model_dir, map_location=torch.device(device))
 
 ###
@@ -150,18 +159,18 @@ trained_model = torch.load(model_dir, map_location=torch.device(device))
 plot_loader = test_loader
 
 # Plotting slices of the dose
-save_plot_dir = "images/SwinUNETR-v16-sample.png"
+save_plot_dir = "images/SwinUNETR-v18-sample.png"
 plot_slices(trained_model, plot_loader, device, CT_flag=CT_flag, CT_manual=CT, 
             mean_input=mean_input, std_input=std_input, mean_output=mean_output, std_output=std_output,
             save_plot_dir=save_plot_dir, patches=patches) 
  
 # Plotting the dose-depth profiles
-save_plot_dir = "images/SwinUNETR-v16-ddp.png"
+save_plot_dir = "images/SwinUNETR-v18-ddp.png"
 plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
          std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
 
-results_dir = 'models/test-results/SwinUNETR-v16-results.txt'
-save_plot_dir = 'images/SwinUNETR-v16-range-hist.png'
+results_dir = 'models/test-results/SwinUNETR-v18-results.txt'
+save_plot_dir = 'images/SwinUNETR-v18-range-hist.png'
 test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output, save_plot_dir=save_plot_dir)
 
 # dose2act_model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
