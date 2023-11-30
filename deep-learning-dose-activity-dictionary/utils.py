@@ -10,6 +10,7 @@ import unfoldNd
 import seaborn as sns 
 import matplotlib.pyplot as plt
 import pymedphys
+from collections import Counter
 
 def set_seed(seed):
     """
@@ -30,7 +31,9 @@ class DoseActivityDataset(Dataset):
     Create the dataset where the activity is the input and the dose is the output.
     The relevant transforms are applied.
     """
-    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, joint_transform=None, CT_flag=False, CT=None, energy_beam_dict=None):
+    def __init__(self, input_dir, output_dir, num_samples=5, input_transform=None, output_transform=None, 
+                 joint_transform=None, CT_flag=False, CT=None, energy_beam_dict=None,
+                 training_set=False, test_set=False):
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.input_transform = input_transform
@@ -38,6 +41,24 @@ class DoseActivityDataset(Dataset):
         self.joint_transform = joint_transform
         self.energy_beam_dict = energy_beam_dict
         self.file_names = os.listdir(input_dir)[:num_samples]
+        
+        # testing set made up of the most energetic beams
+        if (training_set or test_set) and energy_beam_dict:
+            self.file_names_new = []
+            energy_counts = Counter(energy_beam_dict.values())
+            sorted_energies = sorted(energy_counts.keys())
+            energy_threshold = float(sorted_energies[-4])
+            number_beams = len(self.file_names)
+            for idx in range(number_beams):    
+                beam = self.file_names[idx][:4]
+                beam_energy = energy_beam_dict[beam]
+                if test_set and float(beam_energy) >= energy_threshold:
+                    self.file_names_new.append(self.file_names[idx])
+                elif training_set and float(beam_energy) <= energy_threshold:
+                    self.file_names_new.append(self.file_names[idx])
+            self.file_names = self.file_names_new
+        
+        
         self.CT_flag = CT_flag
         self.CT = CT
 
@@ -63,7 +84,7 @@ class DoseActivityDataset(Dataset):
         if self.CT_flag:
             input_volume = torch.cat((input_volume, torch.tensor(self.CT, dtype=torch.float32).unsqueeze(0)))
         if self.energy_beam_dict is not None:
-            beam_number = self.file_names[idx][0:4]
+            beam_number = self.file_names[idx][:4]
             beam_energy = self.energy_beam_dict.get(beam_number, 0.0)
             # if (beam_energy == 0.0):
             #     print(beam_number)
@@ -408,11 +429,15 @@ def plot_range_histogram(range_list, save_plot_dir="images/hist_BP_deviation.png
     range_list = range_list[range_list > -5]
     plt.hist(range_list.flatten(), bins=bins, color='blue', alpha=0.5)#, label='No Reconstruction')
 
-    plt.title('Deviation - Bragg Peak (BP)')
-    plt.xlabel('Reference BP - Reconstructed BP (mm)')
-    plt.ylabel('Frequency')
+    font_size = 20
+    plt.xticks(fontsize=font_size)
+    plt.yticks(fontsize=font_size)
+    plt.title('Deviation - Bragg Peak (BP)', fontsize=font_size)
+    plt.xlabel('Reference BP - Reconstructed BP (mm)', fontsize=font_size)
+    plt.ylabel('Frequency', fontsize=font_size)
+    plt.tight_layout()
 
-    plt.legend()
+    # plt.legend()
     plt.savefig(save_plot_dir, dpi=500)
     return None
 

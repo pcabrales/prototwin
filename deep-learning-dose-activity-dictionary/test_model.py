@@ -3,10 +3,12 @@ import torch.nn as nn
 from tqdm import tqdm
 from utils import RE_loss, range_loss, post_BP_loss, gamma_index, pymed_gamma, plot_range_histogram
 import numpy as np
+import time ###
 
 def test(trained_model, test_loader, device, results_dir='.',
          mean_output=0, std_output=1, save_plot_dir='images/hist.png'):
     # Test loop (after the training is complete)
+    time_list = []
     RE_loss_list = []
     l2_loss_list = []
     l2_loss = nn.MSELoss()
@@ -22,7 +24,9 @@ def test(trained_model, test_loader, device, results_dir='.',
     with torch.no_grad():
         for batch_input, batch_target, _ in tqdm(test_loader):
             batch_input = batch_input.to(device)
+            start_time = time.time()
             batch_output = trained_model(batch_input)
+            time_list.append((time.time() - start_time) * 1000)
             batch_output = batch_output.detach().cpu()
             torch.cuda.empty_cache()
             RE_loss_list.append(RE_loss(batch_output, batch_target, mean_output=mean_output, std_output=std_output))   ### set it to absolute value
@@ -53,7 +57,8 @@ def test(trained_model, test_loader, device, results_dir='.',
            f"R10: {torch.mean(R10_list)} +- {torch.std(R10_list)}\n" \
            f"L2 Loss: {torch.mean(l2_loss_list)} +- {torch.std(l2_loss_list)}\n" \
            f"Gamma index: {torch.mean(gamma_list)} +- {torch.std(gamma_list)}\n" \
-           f"Gamma index (good one - pymed one): {torch.mean(gamma_pymed_list)} +- {torch.std(gamma_pymed_list)}"
+           f"Gamma index (good one - pymed one): {torch.mean(gamma_pymed_list)} +- {torch.std(gamma_pymed_list)}\n" \
+           f"Time per loading (ms): {np.mean(np.array(time_list))} +- {np.std(np.array(time_list))}"
     print(text_results)
 
     # Save to file
