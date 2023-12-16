@@ -25,7 +25,7 @@ def set_seed(seed):
     return True
 
 
-# Creating a 128x128 dataset for the dose/activity input/output pairs
+# Creating a dataset for the dose/activity input/output pairs
 class DoseActivityDataset(Dataset):
     """
     Create the dataset where the activity is the input and the dose is the output.
@@ -38,28 +38,29 @@ class DoseActivityDataset(Dataset):
         self.output_dir = output_dir
         self.input_transform = input_transform
         self.output_transform = output_transform
-        self.joint_transform = joint_transform
-        self.energy_beam_dict = energy_beam_dict
-        self.file_names = os.listdir(input_dir)[:num_samples]
+        self.joint_transform = joint_transform  # Transforms applied to both input and output images
+        self.energy_beam_dict = energy_beam_dict  # Dictionary including the energy for each beam in keV
+        self.file_names = os.listdir(input_dir)[:num_samples]  # Only selecting as many files as given by num_samples
         
-        # testing set made up of the most energetic beams
+        # Making a testing set made up of the most energetic beams and a training set w/ the rest
+        # (this means that our network has not been trained with beams as energetic as these, 
+        # and thus they are "new" to it; this could not be done with the linear combination of beams)
         if (training_set or test_set) and energy_beam_dict:
             self.file_names_new = []
             energy_counts = Counter(energy_beam_dict.values())
-            sorted_energies = sorted(energy_counts.keys())
-            energy_threshold = float(sorted_energies[-4])
+            sorted_energies = sorted(energy_counts.keys())  # Sorts the energies of all beams in the dictionary
+            energy_threshold = float(sorted_energies[-4])   # Selecting the train/test energy threshold to the fourth most powerful energies (there are around 50 different beam energies)
             number_beams = len(self.file_names)
             for idx in range(number_beams):    
                 beam = self.file_names[idx][:4]
                 beam_energy = energy_beam_dict[beam]
-                if test_set and float(beam_energy) >= energy_threshold:
+                if test_set and float(beam_energy) >= energy_threshold:  # If generating the test set and if a beam has an energy above the threshold, select it
                     self.file_names_new.append(self.file_names[idx])
-                elif training_set and float(beam_energy) <= energy_threshold:
+                elif training_set and float(beam_energy) <= energy_threshold:   # If generating the training set and if a beam has an energy below the threshold, select it
                     self.file_names_new.append(self.file_names[idx])
             self.file_names = self.file_names_new
-        
-        
-        self.CT_flag = CT_flag
+          
+        self.CT_flag = CT_flag  # Flag indicating whether the set will include the CT as a second channel to train the nets
         self.CT = CT
 
     def __len__(self):
@@ -82,12 +83,10 @@ class DoseActivityDataset(Dataset):
         if self.joint_transform:
             input_volume, output_volume = self.joint_transform(input_volume, output_volume)
         if self.CT_flag:
-            input_volume = torch.cat((input_volume, torch.tensor(self.CT, dtype=torch.float32).unsqueeze(0)))
+            input_volume = torch.cat((input_volume, torch.tensor(self.CT, dtype=torch.float32).unsqueeze(0)))  # Placing the CT as a second input channel
         if self.energy_beam_dict is not None:
             beam_number = self.file_names[idx][:4]
-            beam_energy = self.energy_beam_dict.get(beam_number, 0.0)
-            # if (beam_energy == 0.0):
-            #     print(beam_number)
+            beam_energy = self.energy_beam_dict.get(beam_number, 0.0)  # If the energy is not in the dictionary, set to 0
             beam_energy = float(beam_energy) / 1000  # from keV to MeV
         else: 
             beam_energy = "N/A"
@@ -95,11 +94,11 @@ class DoseActivityDataset(Dataset):
         return input_volume, output_volume, beam_energy
 
 
-# Function to get means, standard deviations, minimum and maximum values of the selected data
+# Function to get means, standard deviations, minimum and maximum values of the selected data for a given number of samples (num_samples)
 def dataset_statistics(input_dir, output_dir, num_samples=5):
-    dataset = DoseActivityDataset(input_dir=input_dir, output_dir=output_dir, num_samples=948)
+    dataset = DoseActivityDataset(input_dir=input_dir, output_dir=output_dir, num_samples=num_samples)
     # Input images (activity)
-    input_data = [x[0] for x in dataset]
+    input_data = [x[0] for x in dataset]  # Extracting and stacking all images
     input_data = torch.stack(input_data)
     mean_input = input_data.mean()
     std_input = input_data.std()
@@ -112,7 +111,7 @@ def dataset_statistics(input_dir, output_dir, num_samples=5):
     print(f'\nStandard deviation of the input pixel values: {std_input:0.6f}')
 
     # Output images (dose)
-    output_data = [x[1] for x in dataset]
+    output_data = [x[1] for x in dataset]  # Extracting and stacking all images
     output_data = torch.stack(output_data)
     mean_output = output_data.mean()
     std_output = output_data.std()
@@ -129,13 +128,14 @@ def dataset_statistics(input_dir, output_dir, num_samples=5):
 
 # CUSTOM TRANSFORMS
 
+# Class to apply the same transform **in the same way** to both input and output
 class JointCompose:
     def __init__(self, transforms):
         self.transforms = transforms
 
     def __call__(self, input_volume, output_volume):
         for transform in self.transforms:
-            seed = torch.randint(0, 2**32, (1,)).item()
+            seed = torch.randint(0, 2**32, (1,)).item()  # Random seed
             
             torch.manual_seed(seed)
             input_volume = transform(input_volume)
@@ -145,7 +145,8 @@ class JointCompose:
                 
         return input_volume, output_volume
 
-# Torchvision transforms do not work on floating point numbers
+# Min max normalize for our Numpy arrays (dose/activity images)
+# Torchvision transforms do not work on floating point numbers, 
 class MinMaxNormalize:
     def __init__ (self, min_tensor, max_tensor):
         self.min_tensor = min_tensor
@@ -153,11 +154,11 @@ class MinMaxNormalize:
     def __call__(self, img):
         return (img - self.min_tensor)/(self.max_tensor - self.min_tensor)
 
-
+# Gaussian blurring the image
 class GaussianBlurFloats:
     def __init__(self, p=1, sigma=2):
-        self.sigma = sigma
-        self.p = p  # Probability of applying the  blur
+        self.sigma = sigma  # Maximum sigma of the vlur
+        self.p = p  # Probability of applying the blur
 
     def __call__(self, img):
         # Convert tensor to numpy array
@@ -175,16 +176,18 @@ class GaussianBlurFloats:
 
         return blurred_tensor
 
+
 class Random3DCrop: # Crop image to be multiple of 8
     def __init__(self, output_size):
-        assert isinstance(output_size, (int, tuple))
+        assert isinstance(output_size, (int, tuple))  # Check if size is int (all images have the same dim), or tuple
         if isinstance(output_size, int):
             self.output_size = (output_size, output_size, output_size)
         else:
-            assert len(output_size) == 3
+            assert len(output_size) == 3  # Check tuple of image size is three
             self.output_size = output_size
 
     def __call__(self, img):
+        # Cropping
         h, w, d = img.shape[-3:]
 
         new_h, new_w, new_d = self.output_size
@@ -198,25 +201,29 @@ class Random3DCrop: # Crop image to be multiple of 8
                    left: left + new_w,
                    front: front + new_d]
         
+# This function resizes by interpolatingg
 class Resize3D:
-    # This function resizes by interpolatingg
     def __init__(self, size):
         self.size = size
 
     def __call__(self, img):
-        img = img.unsqueeze(0)  # Interpolate takes input tensors that have a batch and channel dimensions
+        img = img.unsqueeze(0)  # Unsqueeze because interpolate takes input tensors that have a batch and channel dimensions
         img = F.interpolate(img, size=self.size, mode='trilinear', align_corners=True)
         return img.squeeze(0)
     
+# This function resizes by cropping and padding
 class ResizeCropAndPad3D:
-    # This function resizes by cropping and padding
     def __init__(self, size):
         self.size = size
 
     def __call__(self, img):
         img = img.unsqueeze(1)  # Pad takes input tensors that have a batch and channel dimensions
-        pad_right = pad_left = pad_top = pad_bottom = pad_front = pad_back = 0
-        if self.size[0] > img.shape[2]:
+        pad_right = pad_left = pad_top = pad_bottom = pad_front = pad_back = 0  # By default, do not pad
+        # For each dimension, we check whether the size we specified is smaller (in which case, crop) or larger
+        # (in which case, pad) the actual image
+        
+        # In the longitudinal dimension we crop/pad at the beginning of the image, opposite from where the beam starts, to not crop/pad the beam
+        if self.size[0] > img.shape[2]:  # dim=2 of img corresponds to the first spatial size (dim=0 of self.size)
             pad_left = self.size[0] - img.shape[2]
         elif self.size[0] < img.shape[2]:
             img = img[:, :, img.shape[2] - self.size[0] : , 
@@ -871,10 +878,7 @@ def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reco
     fig.tight_layout()
     fig.savefig(save_plot_dir, dpi=300, bbox_inches='tight')
 
-
     return None
-
-
 
 # def find_max_closest_to_edge(loader):
 #     closest_edge_distance = float('inf')
@@ -909,3 +913,102 @@ def back_and_forth(dose2act_model, act2dose_model, act2dose_loader, device, reco
     # plt.savefig("images/test_closest_edge")
 
 #     return closest_max_index.item(), closest_tensor
+
+
+# Plotting a single test reconstructed beam
+def plot_test_beam(trained_model, input, target, device, CT_flag=False, CT_manual=None, mean_input=0, std_input=1,
+                   mean_output=0, std_output=1, z_slice = None,
+                   save_plot_dir = "images/sample.png", patches=False, patch_size=56):
+        
+    n_plots = 1
+    output = trained_model(input.to(device))
+    
+    if CT_manual is not None:  # Alternatively, the user can manually pass the CT as input 
+        CT = torch.stack([torch.tensor(np.ascontiguousarray(CT_manual))] * n_plots)    
+        CT_flag = True
+        vmin_CT = -125
+        vmax_CT = 225
+    
+    sns.set()
+    fig, axs = plt.subplots(n_plots, 4, figsize=[13, 4])
+
+    input_scaled = mean_input + input * std_input
+    output_scaled = mean_output + output * std_output  # undoing normalization
+    target_scaled = mean_output + target * std_output
+    font_size = 15
+    max_target = torch.max(target_scaled[0:n_plots])
+    max_input = torch.max(input_scaled[0:n_plots])
+
+    # Add titles to the columns
+    column_titles = ['Input (Activation)', 'Target (Reference dose)', 'Output (Calculated dose)', 'Error = |Output - Target|']
+    for ax, col in zip(axs, column_titles):
+        ax.set_title(col, fontsize=font_size)
+
+    for idx in range(n_plots):
+        input_img = input_scaled[idx].cpu().detach().squeeze(0).squeeze(0)
+        out_img = output_scaled[idx].cpu().detach().squeeze(0).squeeze(0)
+        target_img = target_scaled[idx].cpu().detach().squeeze(0).squeeze(0)
+        if z_slice is None:
+            idcs_max_target = torch.where(target_img == torch.max(target_img))
+            z_slice_idx = idcs_max_target[-1].item()  # Plotting the slice where the value of the dose is maximum
+        else:
+            z_slice_idx = z_slice  # if we specify a z slice we use it
+            
+        input_img = input_img[:,:,z_slice_idx]
+        out_img = out_img[:,:,z_slice_idx]
+        target_img = target_img[:,:,z_slice_idx]
+        
+        if CT_flag:
+            # mask = np.where(target_img > 0.1 * torch.max(target_img), 0.8, 0.0)  # Masking 0 values to be able to see the CT ###
+            mask_input = ((input_img - torch.min(input_img)) / (torch.max(input_img) - torch.min(input_img))).numpy() * 1.4
+            mask_target = ((target_img - torch.min(target_img)) / (torch.max(target_img) - torch.min(target_img))).numpy() * 1.4
+            mask_input[mask_input > 1.0] = 1.0
+            mask_target[mask_target > 1.0] = 1.0
+            
+            CT_idx = CT[idx].cpu().detach().squeeze(0).squeeze(0)[:,:,z_slice_idx]
+            for plot_column in range(4):
+                axs[plot_column].imshow(np.flipud(CT_idx).T, cmap='gray', vmin=vmin_CT, vmax=vmax_CT)
+            
+        else:    
+            mask_input = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
+            mask_target = np.ones_like(input_img).astype(float)  # Leave all if no CT is provided
+            
+        mask_input = np.flipud(mask_input).T
+        mask_target = np.flipud(mask_target).T
+        
+        diff_img = abs(target_img - out_img)
+        c1 = axs[0].imshow(np.flipud(input_img).T, vmax=max_input, cmap='jet', aspect='auto', alpha=mask_input)
+        axs[0].set_xticks([])
+        axs[0].set_yticks([])
+        if idx == 0:
+            axs[0].plot([40, 140], [10, 10], linewidth=12, color='black')
+            axs[0].plot([40, 140], [10, 10], linewidth=8, color='white', label='1 cm')
+            axs[0].text(75, 19, '10 cm', color='white', fontsize=font_size)
+
+        c2 = axs[1].imshow(np.flipud(target_img).T, vmax=max_target, cmap='jet', aspect='auto', alpha=mask_target)
+        axs[1].set_xticks([])
+        axs[1].set_yticks([])
+        axs[2].imshow(np.flipud(out_img).T, cmap='jet', vmax=max_target, aspect='auto', alpha=mask_target)
+        axs[2].set_xticks([])
+        axs[2].set_yticks([])
+        axs[3].imshow(np.flipud(diff_img).T, cmap='jet', vmax=max_target, aspect='auto', alpha=mask_target)
+        axs[3].set_xticks([])
+        axs[3].set_yticks([])
+
+    cbar_ax1 = fig.add_axes([0.029, 0.01, 0.22, 0.03])
+    cbar_ax2 = fig.add_axes([0.3, 0.01, 0.66, 0.03])
+
+    cbar1 = fig.colorbar(c1, cax=cbar_ax1, orientation='horizontal')
+    cbar1.set_label(label=r'$\beta^+$ Decay Count $\ / \ mm^3$', size=font_size)
+    cbar1.ax.tick_params(labelsize=font_size)
+
+    cbar2 = fig.colorbar(c2, cax=cbar_ax2, orientation='horizontal', format='%.1e')
+    cbar2.set_label(label='Dose ($Gy$)', size=font_size)
+    cbar2.ax.xaxis.get_offset_text().set(size=font_size)
+    cbar2.ax.tick_params(labelsize=font_size)
+
+    fig.tight_layout()
+    fig.subplots_adjust(bottom=0.06, left=0.022)
+
+    fig.savefig(save_plot_dir, dpi=600, bbox_inches='tight')
+    return None

@@ -165,9 +165,9 @@ save_plot_dir = "images/SwinUNETR-v14-ddp.png"
 plot_ddp(trained_model, plot_loader, device, mean_output=mean_output,
          std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
 
-results_dir = 'models/test-results/SwinUNETR-v14-results.txt'
-save_plot_dir = 'images/SwinUNETR-v14-range-hist.png'
-test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output, save_plot_dir=save_plot_dir)
+# results_dir = 'models/test-results/SwinUNETR-v14-results.txt'
+# save_plot_dir = 'images/SwinUNETR-v14-range-hist.png'
+# test(trained_model, test_loader, device, results_dir=results_dir, mean_output=mean_output, std_output=std_output, save_plot_dir=save_plot_dir)
 
 # dose2act_model_dir = "models/trained-models/reverse-SwinUNETR-v1.pth"
 # dose2act_model = torch.load(dose2act_model_dir, map_location=torch.device(device))
@@ -175,3 +175,23 @@ test(trained_model, test_loader, device, results_dir=results_dir, mean_output=me
 # act2dose_model = torch.load(act2dose_model_dir, map_location=torch.device(device))
 # back_and_forth(dose2act_model, act2dose_model, plot_loader, device, reconstruct_dose=False, num_cycles=1, y_slice=32, 
 #                mean_act=mean_input, std_act=std_input, mean_dose=mean_output, std_dose=std_output, save_plot_dir="images/reconstructed_act_blob_1cycle.png")
+
+
+from utils import plot_test_beam
+save_plot_dir = "images/test_reconstructed_beam.png"
+input = np.load("data/dataset_1/Acti1.npy")
+target = np.load("data/dataset_1/Dose10.npy")
+input = torch.tensor(input).unsqueeze(0)
+target = torch.tensor(target).unsqueeze(0)
+input, target = joint_transform(input, target)
+input = input.unsqueeze(0)
+target = target.unsqueeze(0)
+print(input.shape)
+print(target.shape)
+input = (input - mean_input) / std_input
+target = (target - torch.mean(target)) / torch.std(target)
+
+print(torch.mean(input), torch.std(input), mean_input, std_input)
+
+plot_test_beam(trained_model, input, target, device, mean_output=mean_output, CT_manual=CT, mean_input=mean_input, std_input=std_input, 
+         std_output=std_output, save_plot_dir=save_plot_dir, patches=patches, patch_size=img_size[2]//2)
